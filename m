@@ -93,7 +93,7 @@ toolarray=(
 "websploit" "openvas" "shellter" "geany" "bleachbit" "vmr" "hashbuster" "findsploit" "howdoi" "operative" "netattack2" "koadic" "empire" "meterpreter_paranoid_mode"
 "dropit_frmw" "wifi_pumpkin" "veil" "leviathan" "fake_image" "avet" "gloom" "arcanus" "msfpc" "morphhta" "lfi" "unibyav" "demiguise" "dkmc" "sechub" "beef" "mitmf"
 "fsociety" "arp_scan" "netool" "sqlmap" "patator" "zeus" "evil_droid" "nosqlmap" "eggshell" "zerodoor" "cromos" "yuki-chan" "socialfish" "autosploit" "blazy"
-"striker" "hyprpulse" "instaburst" "instagram-py" "datasploit" "sitebroker" "enigma"
+"striker" "hyprpulse" "instaburst" "datasploit" "sitebroker" "enigma"
 )
 #setting frequent stings
 	YNYES="("$YS"y"$CE"/"$YS"n"$CE")("$YS"Enter"$CE"=yes)"
@@ -5614,11 +5614,8 @@ function website_tools
 		else
 			echo -e ""$RS" 8"$CE") "$RS"InstaBurst"$CE"             A faster way to brute force Instagram"
 		fi
-		if [[ -f /usr/local/bin/instagram-py ]]
 		then
-			echo -e ""$YS" 9"$CE") Instagram-py          Brute force Instagram without password limiting"
 		else
-			echo -e ""$RS" 9"$CE") "$RS"Instagram-py"$CE"          Brute force Instagram without password limiting"
 		fi
 		if [[ -d /root/datasploit ]]
 		then
@@ -5776,14 +5773,11 @@ function website_tools
 			fi
 		elif [[ "$WEB" = 9 ]]
 		then
-			if [[ -f /usr/local/bin/instagram-py ]]
 			then
 				while true
 				do
 					clear
-					TERMINALTITLE="Instagram-py"
 					dash_calc
-					printf '\033]2;Instagram-py\a'
 					echo -e " "$YS"1"$CE") New attack"
 					echo -e " "$YS"2"$CE") Continue previous attack"
 					echo -e " "$YS"3"$CE") View cracked passwords"
@@ -5803,7 +5797,6 @@ function website_tools
 							sleep 2
 							continue
 						fi
-						instagram-py -vvv -u "$USRNM" -pl "$WRDLST"
 						echo -e "$PAKTGB"
 						$READAK
 					elif [[ "$C" == 2 ]]
@@ -5818,19 +5811,16 @@ function website_tools
 							sleep 2
 							continue
 						fi
-						instagram-py -vvv -c -u "$USRNM" -pl "$WRDLST"
 						echo -e "$PAKTGB"
 						$READAK
 					elif [[ "$C" == 3 ]]
 					then
 						echo -e ""$YS"Username: "$CE""
 						read USRNM
-						instagram-py -i "$USRNM"
 						echo -e "$PAKTGB"
 						$READAK
 					elif [[ "$C" == 4 ]]
 					then
-						instagram-py -cc
 						echo -e "$PAKTGB"
 						$READAK
 					elif [[ "$C" == "b" || "$C" == "back" ]]
@@ -5851,7 +5841,6 @@ function website_tools
 				read INSTALL
 				if [[ "$INSTALL" = "install" ]]
 				then
-					install_instagram-py
 				else
 					continue
 				fi
