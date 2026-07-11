@@ -3901,7 +3901,7 @@ function wifi_tools
 		cd
 	elif [[ "$APPP" = "7" ]]
 	then
-		if [[ -d "/root/hakkuframework" ]]
+		if command -v usufy >/dev/null 2>&1 || command -v usufy.py >/dev/null 2>&1 || command -v osrf >/dev/null 2>&1 || command -v osrframework-cli >/dev/null 2>&1 || [[ -d "/root/osrframework" ]]
 		then
 			while true
 			do
@@ -5473,7 +5473,7 @@ function information_gathering
 			fi
 		elif [[ "$INFOG" = "7" ]]
 		then
-			if [[ -d "/root/hakkuframework" ]]
+			if command -v usufy >/dev/null 2>&1 || command -v usufy.py >/dev/null 2>&1 || command -v osrf >/dev/null 2>&1 || command -v osrframework-cli >/dev/null 2>&1 || [[ -d "/root/osrframework" ]]
 			then
 				while true
 				do
@@ -9637,7 +9637,7 @@ then
 		macchanger -s $MYINT
 	elif [[ "$YORNAA" = "st" ]]
 	then
-                speedtest-cli
+                /usr/local/bin/speedtest-cli
 	elif [[ "$YORNAA" = "10" || "$YORNAA" = "11" || "$YORNAA" = "12" ]]
 	then
 		new_terminal
@@ -9829,10 +9829,6 @@ check_if_ks
 		then
 			chmod +x morpheus.sh
 		fi
-	}
-	function install_osrframework
-	{
-		pip install osrframework
 	}
 	function install_hakku
 	{
@@ -10523,27 +10519,6 @@ function install_howdoi
 		gitlink="https://github.com/govolution/avet.git"
 		install_default
 	}
-	function install_mougather
-	{
-		cd /root || return
-		rm -rf MouGather
-		git clone --depth 1 https://github.com/shezbendo0o0o/MouGather.git MouGather || return
-		cd /root/MouGather || return
-
-		mkdir -p Configuration GUI/Credentials GUI/Theme GUI/Language Display Core Launchers
-
-		apt-get update
-		apt-get install -y wkhtmltopdf python3-pip whois traceroute php git
-
-		chmod +x install.sh
-		bash install.sh
-
-		python3 -m pip install pdfkit || python3 -m pip install --break-system-packages pdfkit
-		if [[ -f requirements.txt ]]
-		then
-			python3 -m pip install -r requirements.txt || python3 -m pip install --break-system-packages -r requirements.txt
-		fi
-	}
 	function install_gloom
 	{
 		foldname="Gloom-Framework"
@@ -10790,6 +10765,132 @@ function install_yuki-chan
 {
         install_yuki
 }
+
+function install_mougather
+{
+        echo -e ""$YS"Installing OSRFramework with Python3..."$CE""
+
+        apt-get update
+        apt-get install -y python3 python3-pip python3-venv python3-full pipx
+
+        PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin python3 -m pipx install osrframework --force || \
+        python3 -m install_mougather --break-system-packages || \
+        python3 -m install_mougather --user
+
+        chmod +x /usr/local/bin/osrf* /usr/local/bin/*fy 2>/dev/null || true
+
+        if command -v osrfconsole >/dev/null 2>&1 || command -v osrf >/dev/null 2>&1 || command -v usufy >/dev/null 2>&1
+        then
+                echo -e ""$GS"OSRFramework installed successfully."$CE""
+        else
+                echo -e ""$RS"OSRFramework install finished, but command was not found."$CE""
+                echo -e ""$YS"Check: ls /usr/local/bin | grep -Ei 'osrf|usufy|searchfy|mailfy|phonefy'"$CE""
+        fi
+
+        sleep 3
+}
+
+
+function install_mougather
+{
+        echo -e ""$YS"Installing MouGather..."$CE""
+
+        cd /root || return
+
+        apt-get update
+        apt-get install -y git curl python3 python3-pip python3-venv python3-full wkhtmltopdf whois traceroute php
+
+        rm -rf /root/MouGather
+        git clone --depth 1 https://github.com/shezbendo0o0o/MouGather.git /root/MouGather
+
+        if [[ ! -d /root/MouGather ]]
+        then
+                echo -e ""$RS"Failed to clone MouGather."$CE""
+                sleep 3
+                return 1
+        fi
+
+        cd /root/MouGather || return
+
+        mkdir -p Configuration GUI/Credentials GUI/Theme GUI/Language Display Core Launchers
+        mkdir -p GUI/Reports/Phone GUI/Reports/People GUI/Reports/Usernames GUI/Reports/Websites GUI/Reports/Ports GUI/Reports/E-Mail
+        mkdir -p Logs Temp QRCodes
+
+        if [[ -f install.sh ]]
+        then
+                chmod +x install.sh
+                bash install.sh || true
+        fi
+
+        python3 -m pip install pdfkit --break-system-packages || true
+        if [[ -f requirements.txt ]]
+        then
+                python3 -m pip install -r requirements.txt --break-system-packages || true
+        fi
+
+        cat > /usr/local/bin/mougather <<'EOF'
+#!/usr/bin/env bash
+cd /root/MouGather || exit 1
+
+if [[ -f mougather.py ]]
+then
+        python3 mougather.py "$@"
+elif [[ -f MrHolmes.py ]]
+then
+        python3 MrHolmes.py "$@"
+else
+        echo "MouGather main file was not found."
+        ls -la
+fi
+EOF
+
+        chmod +x /usr/local/bin/mougather
+        ln -sf /usr/local/bin/mougather /usr/bin/mougather
+
+        echo -e ""$GS"MouGather installed successfully."$CE""
+        echo -e ""$YS"Run it with: mougather"$CE""
+        sleep 3
+}
+
+
+function install_osrframework
+{
+        echo -e ""$YS"Installing OSRFramework..."$CE""
+
+        apt-get update
+        apt-get install -y python3 python3-pip python3-venv python3-full pipx git
+
+        mkdir -p /root/osrframework
+
+        PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin python3 -m pipx install osrframework --force || \
+        python3 -m pip install osrframework --break-system-packages || true
+
+        if [[ -x /opt/pipx/venvs/osrframework/bin/python ]]
+        then
+                /opt/pipx/venvs/osrframework/bin/python -m pip install --force-reinstall "urllib3<2" "requests<3" "cfscrape" || true
+        fi
+
+        ln -sf /usr/local/bin/osrfconsole /usr/bin/osrfconsole 2>/dev/null || true
+        ln -sf /usr/local/bin/usufy /usr/bin/usufy 2>/dev/null || true
+        ln -sf /usr/local/bin/searchfy /usr/bin/searchfy 2>/dev/null || true
+        ln -sf /usr/local/bin/mailfy /usr/bin/mailfy 2>/dev/null || true
+        ln -sf /usr/local/bin/phonefy /usr/bin/phonefy 2>/dev/null || true
+
+        if command -v osrfconsole >/dev/null 2>&1
+        then
+                echo -e ""$GS"OSRFramework installed successfully."$CE""
+                echo -e ""$YS"Run it with: osrfconsole"$CE""
+        elif command -v usufy >/dev/null 2>&1
+        then
+                echo -e ""$GS"OSRFramework installed successfully."$CE""
+                echo -e ""$YS"Run it with: usufy"$CE""
+        else
+                echo -e ""$RS"OSRFramework install failed or command not found."$CE""
+        fi
+
+        sleep 3
+}
+
 
 #------------------------------------
 ####################################
