@@ -10861,27 +10861,14 @@ function install_yuki
         chmod +x wafninja 2>/dev/null || true
         chmod +x joomscan 2>/dev/null || true
 
-        if [[ -f requirements.txt ]]
-        then
-                python3 -m venv /opt/yukichan-venv 2>/dev/null || true
-                /opt/yukichan-venv/bin/python -m pip install --upgrade pip setuptools wheel || true
-                /opt/yukichan-venv/bin/python -m pip install -r requirements.txt || true
-        fi
-
         cat > /usr/local/bin/yukichan <<'EOF'
 #!/usr/bin/env bash
 cd /root/Yuki-Chan-The-Auto-Pentest || exit 1
-
-if [[ -f yuki.sh ]]
-then
-        bash yuki.sh "$@"
-else
-        echo "Yuki Chan launcher yuki.sh was not found."
-        ls -la
-fi
+bash yuki.sh "$@"
 EOF
 
         chmod +x /usr/local/bin/yukichan
+        ln -sf /usr/local/bin/yukichan /usr/bin/yukichan
 
         echo -e ""$GS"Yuki Chan installed successfully."$CE""
         echo -e ""$YS"Run it with: yukichan"$CE""
@@ -10891,118 +10878,6 @@ EOF
 function install_yuki-chan
 {
         install_yuki
-}
-
-function install_yuki-chan
-{
-        install_yuki
-}
-
-	function install_socialfish
-	{
-		foldname="SocialFish"
-		gitlink="https://github.com/UndeadSec/SocialFish.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install -r requirements.txt
-			pip2.7 install -r requirements.txt
-		fi
-	}
-	function install_autosploit
-	{
-		foldname="AutoSploit"
-		gitlink="https://github.com/NullArray/AutoSploit.git"
-		install_default
-	}
-	function install_blazy
-	{
-		foldname="Blazy"
-		gitlink="https://github.com/UltimateHackers/Blazy.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install -r requirements.txt
-		fi
-	}
-	function install_striker
-	{
-		foldname="Striker"
-		gitlink="https://github.com/UltimateHackers/Striker.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install -r requirements.txt
-		fi
-	}
-	function install_hyprpulse
-	{
-		foldname="hyprPulse"
-		gitlink="https://github.com/Ethical-H4CK3R/hyprPulse.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			chmod +x install.sh
-			pip2.7 install -r requirements.txt
-			./install.sh
-			
-		fi
-	}
-	function install_instaburst
-	{
-		foldname="InstaBurst"
-		gitlink="https://github.com/Ethical-H4CK3R/InstaBurst.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			chmod +x install.sh
-			pip2.7 install -r requirements.txt
-			./install.sh
-			
-		fi
-	}
-	function install_sitebroker
-	{
-		foldname="SiteBroker"
-		gitlink="https://github.com/Anon-Exploiter/SiteBroker"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install -r requirements.txt
-			pip2.7 install -r requirements.txt
-		fi
-	}
-	function install_enigma
-	{
-		foldname="Enigma"
-		gitlink="https://github.com/UndeadSec/Enigma.git"
-		install_default
-	}
-	function install_datasploit
-	{
-		foldname="datasploit"
-		gitlink="https://github.com/DataSploit/datasploit.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install --upgrade --force-reinstall -r requirements.txt
-			pip2.7 install --upgrade --force-reinstall -r requirements.txt
-		fi
-	}
-function install_instagram-py
-{
-        echo -e ""$RS"instagram-py is deprecated and disabled."$CE""
-        echo -e ""$YS"This installer was removed because the package is outdated and unsafe to maintain."$CE""
-        echo -e ""$YS"For legitimate OSINT, use MouGather Social/Usernames instead."$CE""
-        sleep 4
-        return 1
 }
 
 #------------------------------------
