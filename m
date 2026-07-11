@@ -10946,24 +10946,15 @@ function install_howdoi
 			pip2.7 install --upgrade --force-reinstall -r requirements.txt
 		fi
 	}
-	function install_instagram-py
-	{
-		if [[ -f /usr/local/bin/instagram-py ]]
-		then
-			echo -e ""$YS"Upgrading..."$CE""
-			pip3 install instagram-py --upgrade
-		else
-			echo -e ""$YS"Installing..."$CE""
-			easy_install3 -U pip
-			pip3 install requests --upgrade
-			pip3 install requests[socks]
-			pip3 install stem
-			pip3 install instagram-py
-			instagram-py --create-configuration
-		fi
-	}
+function install_instagram-py
+{
+        echo -e ""$RS"instagram-py is deprecated and disabled."$CE""
+        echo -e ""$YS"This installer was removed because the package is outdated and unsafe to maintain."$CE""
+        echo -e ""$YS"For legitimate OSINT, use MouGather Social/Usernames instead."$CE""
+        sleep 4
+        return 1
+}
 
-		
 #------------------------------------
 ####################################
 defaults_l
