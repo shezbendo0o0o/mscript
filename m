@@ -82,7 +82,7 @@ function defaults_l
 #tools
 toolarray=(
 "fluxion" "sniffer" "wifite" "wifiphisher" "morpheus" "osrframework" "hakku" "trity" "cupp" "dracnmap" "fern" "kickthemout" "ghostphisher" "theeye" "xerxes"
-"mdk3" "katana" "airgeddon" "4nonimizer" "beelogger" "ezsploit" "pupy" "zirikatu" "wifiautopwner" "bully" "anonsurf" "anonym8" "thefatrat" "angryip" "sniper"
+"mdk3" "katana" "airgeddon" "4nonimizer" "beelogger" "ezsploit" "pupy" "zirikatu" "wifiautopwner" "bully" "anonsurf" "anonym8" "thefatrat" "angryip" "sniper" "mougather"
 "recondog" "redhawk" "winpayloads" "chaos" "routersploit" "infoga" "nwatch" "eternalscanner" "eaphammer" "dagon" "lalin" "knockmail" "kwetza" "ngrok" "netdiscover"
 "websploit" "openvas" "shellter" "geany" "bleachbit" "vmr" "hashbuster" "findsploit" "howdoi" "operative" "netattack2" "koadic" "empire" "meterpreter_paranoid_mode"
 "dropit_frmw" "wifi_pumpkin" "veil" "leviathan" "fake_image" "avet" "gloom" "arcanus" "msfpc" "morphhta" "lfi" "unibyav" "demiguise" "dkmc" "sechub" "beef" "mitmf"
@@ -787,7 +787,7 @@ function listshortcuts
 	then
 		TITLE="Gloom-Framework"
 		NAMECD="cd /root/Gloom-Framework"
-		KSSET="python gloom.py"
+		KSSET="python2 gloom.py"
 	elif [[ "$nn" = "41" ]]
 	then
 		TITLE="Arcanus"
@@ -3832,7 +3832,7 @@ function wifi_tools
 		if [[ -d "/root/Gloom-Framework" ]]
 		then
 			cd /root/Gloom-Framework
-			python gloom.py
+			python2 gloom.py
 		else
 			echo -e "$TNI"
 			read INSTALL
@@ -5312,11 +5312,44 @@ function information_gathering
 		else
 			echo -e ""$RS" 7"$CE") "$RS"Osrfconsole"$CE"           Perform accurate online researches"
 		fi
+		if [[ -d /root/MouGather ]]
+		then
+			echo -e ""$YS" 8"$CE") MouGather            OSINT Information Gathering"
+		else
+			echo -e ""$RS" 8"$CE") "$RS"MouGather"$CE"            OSINT Information Gathering"
+		fi
 		echo -e ""$YS" b"$CE") Go back"
 		echo -e ""$YS"00"$CE") Main menu"
 		echo -e "Choose: "
 		read INFOG
 		clear
+		if [[ "$INFOG" = 8 ]]
+		then
+			if [[ -d "/root/MouGather" ]]
+			then
+				if command -v mougather >/dev/null 2>&1
+				then
+					mougather
+				else
+					cd /root/MouGather
+					python3 mougather.py
+				fi
+			else
+				echo -e "$TNI"
+				read INSTALL
+				if [[ "$INSTALL" = "install" ]]
+				then
+					install_mougather
+				else
+					continue
+				fi
+			fi
+			cd
+			continue
+		fi
+
+
+
 		if [[ "$INFOG" = 1 ]]
 		then
 			if [[ -d /usr/share/sniper ]]
@@ -10487,6 +10520,27 @@ check_if_ks
 		foldname="avet"
 		gitlink="https://github.com/govolution/avet.git"
 		install_default
+	}
+	function install_mougather
+	{
+		cd /root || return
+		rm -rf MouGather
+		git clone --depth 1 https://github.com/shezbendo0o0o/MouGather.git MouGather || return
+		cd /root/MouGather || return
+
+		mkdir -p Configuration GUI/Credentials GUI/Theme GUI/Language Display Core Launchers
+
+		apt-get update
+		apt-get install -y wkhtmltopdf python3-pip whois traceroute php git
+
+		chmod +x install.sh
+		bash install.sh
+
+		python3 -m pip install pdfkit || python3 -m pip install --break-system-packages pdfkit
+		if [[ -f requirements.txt ]]
+		then
+			python3 -m pip install -r requirements.txt || python3 -m pip install --break-system-packages -r requirements.txt
+		fi
 	}
 	function install_gloom
 	{
