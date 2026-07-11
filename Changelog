@@ -1,4 +1,4 @@
-2.1.5
+2.1.6
 Remade installation menu, now you can select multiple tools at once.
 Fixed no output when handshake scanning.
 Fixed wifiphisher launch when only 1 interface available.
