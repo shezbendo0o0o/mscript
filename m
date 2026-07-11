@@ -7,7 +7,7 @@ IAGREE_FILE="${MSCRIPT_STATE_DIR}/IAGREE.txt"
 
 
 # set -x
-VERSION=2.1.16
+VERSION=2.1.17
 #Number of tools with keyboard shortcut support
 HOWMANYTOOLS=53
 BACKL="0"
