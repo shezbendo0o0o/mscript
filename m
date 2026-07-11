@@ -1395,7 +1395,7 @@ then
 	$READAK
 elif [[ "$ERRS" = "9" ]]
 then
-	wget -O /tmp/scapy2.3.2.tar.gz https://pypi.python.org/packages/6d/72/c055abd32bcd4ee6b36ef8e9ceccc2e242dea9b6c58fdcf2e8fd005f7650/scapy-2.3.2.tar.gz; sudo pip2 install /tmp/scapy2.3.2.tar.gz
+	wget -O /tmp/scapy2.3.2.tar.gz https://pypi.python.org/packages/6d/72/c055abd32bcd4ee6b36ef8e9ceccc2e242dea9b6c58fdcf2e8fd005f7650/scapy-2.1.7.tar.gz; sudo pip2 install /tmp/scapy2.3.2.tar.gz
 	clear
 	echo -e "Error was fixed!"
 	echo -e "$PAKTGB"
@@ -3521,11 +3521,11 @@ function wifi_tools
 	then
 		if [[ -f /usr/sbin/netdiscover ]]
 		then
-			echo -e "Range ("$YS"Enter"$CE"=192.168.1.0/24):"
+			echo -e "Range ("$YS"Enter"$CE"=2.1.7.0/24):"
 			read NRANGE
 			if [[ -z $NRANGE ]]
 			then
-				NRANGE="192.168.1.0/24"
+				NRANGE="2.1.7.0/24"
 			fi
 			netdiscover -r $NRANGE -i "$WLANN"
 		else
@@ -3687,7 +3687,7 @@ function wifi_tools
 				openvas-start
 				echo -e "Launching firefox..."
 				sleep 1
-				firefox https://127.0.0.1:9392
+				firefox https://2.1.7.1:9392
 			else
 				openvas-stop
 			fi
@@ -7787,7 +7787,7 @@ function mitmf_hook
 			mitmfint="${in[$ints]}"
 			export mitmfint
 			clear
-			mitmfgate=$(route -n | grep "$mitmfint" | awk '{if($2!="0.0.0.0"){print $2}}')
+			mitmfgate=$(route -n | grep "$mitmfint" | awk '{if($2!="2.1.7.0"){print $2}}')
 			export mitmfgate
 			clear
 			echo -e "Target's IP: "
@@ -8102,7 +8102,7 @@ function find_gateways()
 		ethr=$(ifconfig | grep "$ETH")
 		if [[ "$ethr" != "" ]]
 		then
-			ethd=$(route -n | awk -v int1="$ETH" '{if(int1~$8 && $2!="IP" && $2!="0.0.0.0"){print $2}}')
+			ethd=$(route -n | awk -v int1="$ETH" '{if(int1~$8 && $2!="IP" && $2!="2.1.7.0"){print $2}}')
 			chi=$(is_it_an_ip "$ethd")
 			if [[ "$ethd" != "" && "$chi" = 1 ]]
 			then
@@ -8113,7 +8113,7 @@ function find_gateways()
 		wlanr=$(ifconfig | grep "$WLANN")
 		if [[ "$wlanr" != "" ]]
 		then
-			wland=$(route -n | awk -v int1="$WLANN" '{if(int1~$8 && $2!="IP" && $2!="0.0.0.0"){print $2}}')
+			wland=$(route -n | awk -v int1="$WLANN" '{if(int1~$8 && $2!="IP" && $2!="2.1.7.0"){print $2}}')
 			chi=$(is_it_an_ip "$wland")
 			if [[ "$wland" != "" && "$chi" = 1 ]]
 			then
@@ -8124,7 +8124,7 @@ function find_gateways()
 		wlanmr=$(ifconfig | grep "$WLANNM")
 		if [[ "$wlanmr" != "" ]]
 		then
-			wlanmd=$(route -n | awk -v int1="$WLANNM" '{if(int1~$8 && $2!="IP" && $2!="0.0.0.0"){print $2}}')
+			wlanmd=$(route -n | awk -v int1="$WLANNM" '{if(int1~$8 && $2!="IP" && $2!="2.1.7.0"){print $2}}')
 			chi=$(is_it_an_ip "$wlanmd")
 			if [[ "$wlanmd" != "" && "$chi" = 1 ]]
 			then
@@ -8142,7 +8142,7 @@ function find_gateways()
 			inttos=$(ifconfig | grep "$FG1")
 			if [[ "$inttos" != "" ]]
 			then
-				gate=$(route -n | awk -v int1="$FG1" '{if(int1~$8 && $2!="IP" && $2!="0.0.0.0"){print $2}}')
+				gate=$(route -n | awk -v int1="$FG1" '{if(int1~$8 && $2!="IP" && $2!="2.1.7.0"){print $2}}')
 				cho=$(is_it_an_ip "$gate")
 				if [[ "$cho" = 1 ]]
 				then
@@ -8157,7 +8157,7 @@ function find_gateways()
 			#~ if [[ "$iptos" != "" ]]
 			#~ then
 				#~ dot=$(give_ip_take_zero "$FG1" "dot")
-				#~ gate=$(route -n | awk -v int1="$dot" '{if(int1~$8 && $2!="IP" && $2!="0.0.0.0"){print $2}}')
+				#~ gate=$(route -n | awk -v int1="$dot" '{if(int1~$8 && $2!="IP" && $2!="2.1.7.0"){print $2}}')
 				#~ echo "$gate"
 				#~ cho=$(is_it_an_ip "$gate")
 				#~ if [[ "$cho" = 1 ]]
@@ -8413,7 +8413,7 @@ function ngrok_option
 						echo -e "Select to type a custom payload, NOT listed."
 						echo -e "Then type the path of the payload you have created on option 1."
 						echo -e "For the listener, the payload is windows/meterpreter/reverse_tcp_dns"
-						echo -e "LHOST is 127.0.0.1 and LPORT is the port you opened to ngrok."
+						echo -e "LHOST is 2.1.7.1 and LPORT is the port you opened to ngrok."
 						echo -e "$PAKTGB"
 						$READAK
 					elif [[ "$SHINT" = "back" || "$SHINT" = "b" ]]
@@ -8911,7 +8911,7 @@ function browser_exploiting
 						mitmfint="$SINT"
 						export mitmfint
 						clear
-						mitmfgate=$(route -n | grep "$mitmfint" | awk '{if($2!="0.0.0.0"){print $2}}')
+						mitmfgate=$(route -n | grep "$mitmfint" | awk '{if($2!="2.1.7.0"){print $2}}')
 						isit=$(is_it_an_ip "$mitmfgate")
 						if [[ "$mitmfgate" != "" && "$isit" = 1 ]]
 						then
@@ -9359,7 +9359,7 @@ function settings_menu
 }
 function undetectable1
 {
-	LHOST=192.168.1.104
+	LHOST=2.1.7.104
 	LPORT=4444
 	DIRECTORY="/root/Desktop/shellcode.txt"
 	TXT="/root/Desktop/txt.txt"
@@ -10201,7 +10201,7 @@ check_if_ks
 		fi
 		echo -e "Downloading angryipscanner"
 		sleep 2
-		wget https://github.com/angryip/ipscan/releases/download/3.5.2/ipscan_3.5.2_amd64.deb
+		wget https://github.com/angryip/ipscan/releases/download/2.1.7/ipscan_3.5.2_amd64.deb
 		echo -e "Installing..."
 		dpkg -i ipscan_3.5.2*
 		echo -e "Done"
