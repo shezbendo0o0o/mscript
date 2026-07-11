@@ -1,4 +1,9 @@
 #! /bin/bash
+# mscript writable user state
+MSCRIPT_STATE_DIR="${MSCRIPT_STATE_DIR:-${HOME}/.mscript}"
+mkdir -p "$MSCRIPT_STATE_DIR" 2>/dev/null
+IAGREE_FILE="${MSCRIPT_STATE_DIR}/IAGREE.txt"
+
 
 # set -x
 VERSION=2.1.5
@@ -217,7 +222,7 @@ function latest_changelog
 	printf '\033]2;LATEST CHANGELOG\a'
 	echo -e ""$BS"Wellcome to version $VERSION"$CE""
 	echo -e "What is included in this update: "
-	cat "$LPATH"/Changelog | head -n $LATESTCHANGELOGLINES
+	cat "/bin/mscript/Changelog" | head -n $LATESTCHANGELOGLINES
 	echo -e "$PAKTC"
 	$READAK
 }
@@ -453,9 +458,9 @@ if [[ "$WIRED" = "" ]]
 then
 	WIRED="eth0"
 fi
-	echo "$MANAGED" > "$LPATH"/wlan.txt
-	echo "$MONITOR" > "$LPATH"/wlanmon.txt
-	echo "$WIRED" > "$LPATH"/eth.txt
+	echo "$MANAGED" > "$MSCRIPT_STATE_DIR"/wlan.txt
+	echo "$MONITOR" > "$MSCRIPT_STATE_DIR"/wlanmon.txt
+	echo "$WIRED" > "$MSCRIPT_STATE_DIR"/eth.txt
 	echo -e ""$YS"Done"$CE""
 	sleep 1
 	clear
@@ -6484,8 +6489,8 @@ function one_time_per_launch_ks
 }
 function interface_menu
 {
-	WLANN=$(cat "$LPATH"/wlan.txt)
-	WLANNM=$(cat "$LPATH"/wlanmon.txt)
+	WLANN=$(cat "$MSCRIPT_STATE_DIR"/wlan.txt)
+	WLANNM=$(cat "$MSCRIPT_STATE_DIR"/wlanmon.txt)
 	echo -e "Your current wireless interface names are $WLANN and $WLANNM"
 	sleep 2
 	echo -e "Do you want to change you interface names?"$YNYES": "
@@ -6498,8 +6503,8 @@ function interface_menu
 		exec bash "$0"
 	else
 		clear
-		rm "$LPATH"/wlan.txt
-		rm "$LPATH"/wlanmon.txt
+		rm "$MSCRIPT_STATE_DIR"/wlan.txt
+		rm "$MSCRIPT_STATE_DIR"/wlanmon.txt
 		set_interface_number
 	fi
 }
@@ -6625,7 +6630,7 @@ function terms_of_use
 	read YESORNO
 	if [[ "$YESORNO" = "YES" ]]
 	then 
-		echo "You have agreed the terms and you use this tool with your own responsibility." > "$LPATH"/IAGREE.txt
+		echo "You have agreed the terms and you use this tool with your own responsibility." > "$IAGREE_FILE"
 		sleep 1
 		clear
 	else
@@ -9700,7 +9705,7 @@ function main_options
 	then
 		clear
 		BACKL=1
-		cat "$LPATH"/Changelog | head -n 20
+		cat "/bin/mscript/Changelog" | head -n 20
 		echo -e "$PAKTC"
 		$READAK
 		clear
@@ -10882,25 +10887,25 @@ then
 	one_time_per_launch_ks
 fi
 ####################################
-if [[ -f ""$LPATH"/IAGREE.txt" ]]
+if [[ -f ""$IAGREE_FILE"" ]]
 then
 
-	if [[ ! -f ""$LPATH"/wlan.txt" ]]
+	if [[ ! -f ""$MSCRIPT_STATE_DIR"/wlan.txt" ]]
 	then
 		set_interface_number
 	fi
-	if [[ ! -f ""$LPATH"/wlanmon.txt" ]]
+	if [[ ! -f ""$MSCRIPT_STATE_DIR"/wlanmon.txt" ]]
 	then
 		set_interface_number
 	fi
-	if [[ ! -f ""$LPATH"/eth.txt" ]]
+	if [[ ! -f ""$MSCRIPT_STATE_DIR"/eth.txt" ]]
 	then
 		set_interface_number
 	fi
 	clear
-	WLANNM=$(cat "$LPATH"/wlanmon.txt)
-	WLANN=$(cat "$LPATH"/wlan.txt)
-	ETH=$(cat "$LPATH"/eth.txt)	
+	WLANNM=$(cat "$MSCRIPT_STATE_DIR"/wlanmon.txt)
+	WLANN=$(cat "$MSCRIPT_STATE_DIR"/wlan.txt)
+	ETH=$(cat "$MSCRIPT_STATE_DIR"/eth.txt)	
 #setting iftop's interface
 	if [[ -f "$LPATH"/settings/iftopint.txt ]]
 	then
@@ -10914,9 +10919,9 @@ then
 	export ETH
 	managed_spaces
 	monitor_spaces
-	if [[ ! -f "$LPATH"/latestchangelog.txt ]]
+	if [[ ! -f "$MSCRIPT_STATE_DIR"/latestchangelog.txt ]]
 	then
-		echo -e "1" > "$LPATH"/latestchangelog.txt
+		echo -e "1" > "$MSCRIPT_STATE_DIR"/latestchangelog.txt
 		latest_changelog
 	fi		
 	banner
