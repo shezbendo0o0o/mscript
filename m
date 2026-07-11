@@ -7,7 +7,7 @@ IAGREE_FILE="${MSCRIPT_STATE_DIR}/IAGREE.txt"
 
 
 # set -x
-VERSION=2.1.6
+VERSION=2.1.7
 #Number of tools with keyboard shortcut support
 HOWMANYTOOLS=53
 BACKL="0"
@@ -285,7 +285,7 @@ check_wlans
 	echo -e ""
 	echo -e "$COL         ████   ████╗  ██████╗  ██╗   ██╗  $CE v$VERSION"
 	echo -e "$COL         ██║█   █║██║ ██╔═══██╗ ██║   ██║  $CE"
-	echo -e "$COL         ██║██ ██║██║ ██║   ██║ ██║   ██║  $CE   by "$COL"Moamen Elsaid$CE"
+	echo -e "$COL         ██║██ ██║██║ ██║   ██║ ██║   ██║  $CE   by "$COL"Moamen Alsayed$CE"
 	echo -e "$COL         ██║ █ █║ ██║ ██║   ██║ ██║   ██║  $CE"
 	echo -e "$COL  The    ██║ ███║ ██║ ╚██████╔╝ ╚██████╔╝   script$CE"
 	echo -e "$COL         ╚═╝ ╚══╝ ╚═╝  ╚═════╝   ╚═════╝     $CE"
@@ -6335,7 +6335,7 @@ function update_mscript
 	TESTINTERNETCONNECTION=$(curl -s checkip.dyndns.org | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
 	if [[ "$TESTINTERNETCONNECTION" != "" ]]
 	then
-		VER=$(timeout -s SIGTERM 20 curl "https://raw.githubusercontent.com/shezbendo0o/mscript/master/version.txt" 2>/dev/null)
+		VER=$(timeout -s SIGTERM 20 curl "https://raw.githubusercontent.com/shezbendo0o0o/mscript/master/version.txt" 2>/dev/null)
 		if [[ "$VERSION" != "$VER" ]]
 		then
 			clear
@@ -6364,7 +6364,7 @@ function update_mscript
 				#~ echo -e "Cloning the latest github version to new "$LPATH""
 				sleep 1
 				cd
-				git clone https://github.com/shezbendo0o/mscript.git
+				git clone https://github.com/shezbendo0o0o/mscript.git
 				cd "$LPATH"
 				chmod +x install.sh
 				clear
@@ -6578,7 +6578,7 @@ function tools_menu
 			echo -e ""
 			echo -e ""$BS"Do you want another tool to be added in the script?"$CE""
 			echo -e ""$BS"Submit it as an issue on my github repo:"$CE""
-			echo -e "	"$YS"https://github.com/shezbendo0o/mscript"$CE""
+			echo -e "	"$YS"https://github.com/shezbendo0o0o/mscript"$CE""
 			echo -e ""
 			echo -e ""
 			echo -e "$PAKTGB"
