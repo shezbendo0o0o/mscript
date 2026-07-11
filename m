@@ -1,4 +1,5 @@
 #! /bin/bash
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
 # mscript writable user state
 MSCRIPT_STATE_DIR="${MSCRIPT_STATE_DIR:-${HOME}/.mscript}"
 mkdir -p "$MSCRIPT_STATE_DIR" 2>/dev/null
@@ -9196,7 +9197,11 @@ function settings_menu
 					echo "$numofans" > "$LPATH"/settings/numofans.txt
 				elif [[ "$HOWCH" = 5 ]]
 				then
-					howdoi -C
+					howdoi "$HOWDOI"
+					echo ""
+					echo ""
+					echo ""
+					echo ""
 				elif [[ "$HOWCH" = "b" || "$HOWCH" = "back" ]]
 				then
 					break
@@ -9444,7 +9449,11 @@ function main_options
 			fi
 			echo -e "How do i :  "
 			read HOW
-			howdoi $co $na $ol $df $HOW
+			howdoi "$HOWDOI"
+			echo ""
+			echo ""
+			echo ""
+			echo ""
 		fi
 	elif [[ "$YORNAA" = "settings" || "$YORNAA" = "s" ]]
 	then
@@ -10402,11 +10411,47 @@ check_if_ks
 			./install.sh
 		fi
 	}
-	function install_howdoi
-	{
-		pip install howdoi
-		pip2.7 install howdoi
-	}
+function install_howdoi
+{
+    echo -e "$INSTALLING Howdoi"
+
+    if command -v howdoi >/dev/null 2>&1
+    then
+        echo -e "$ISL Howdoi is already installed"
+        return 0
+    fi
+
+    # Try apt package first if available
+    if apt-cache show howdoi >/dev/null 2>&1
+    then
+        sudo apt-get update
+        sudo apt-get install -y howdoi && return 0
+    fi
+
+    # Kali/Debian PEP668-safe install method
+    sudo apt-get update
+    sudo apt-get install -y pipx python3-venv python3-full
+
+    python3 -m pipx ensurepath >/dev/null 2>&1 || true
+
+    python3 -m pipx install howdoi --force || pipx install howdoi --force
+
+    # Make howdoi available to mscript even if ~/.local/bin is not in PATH
+    if [ -x "$HOME/.local/bin/howdoi" ]
+    then
+        sudo ln -sf "$HOME/.local/bin/howdoi" /usr/local/bin/howdoi
+    fi
+
+    if command -v howdoi >/dev/null 2>&1
+    then
+        echo -e "$ISL Howdoi installed successfully"
+        return 0
+    else
+        echo -e "$FAIL Howdoi install failed"
+        return 1
+    fi
+}
+
 	function install_operative
 	{
 		foldname="operative-framework"
