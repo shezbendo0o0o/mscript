@@ -93,7 +93,6 @@ toolarray=(
 "websploit" "openvas" "shellter" "geany" "bleachbit" "vmr" "hashbuster" "findsploit" "howdoi" "operative" "netattack2" "koadic" "empire" "meterpreter_paranoid_mode"
 "dropit_frmw" "wifi_pumpkin" "veil" "leviathan" "fake_image" "avet" "gloom" "arcanus" "msfpc" "morphhta" "lfi" "unibyav" "demiguise" "dkmc" "sechub" "beef" "mitmf"
 "fsociety" "arp_scan" "netool" "sqlmap" "patator" "zeus" "evil_droid" "nosqlmap" "eggshell" "zerodoor" "cromos" "yuki-chan" "socialfish" "autosploit" "blazy"
-"striker" "hyprpulse" "instaburst" "datasploit" "sitebroker" "enigma"
 )
 #setting frequent stings
 	YNYES="("$YS"y"$CE"/"$YS"n"$CE")("$YS"Enter"$CE"=yes)"
@@ -5614,9 +5613,6 @@ function website_tools
 		else
 			echo -e ""$RS" 8"$CE") "$RS"InstaBurst"$CE"             A faster way to brute force Instagram"
 		fi
-		then
-		else
-		fi
 		if [[ -d /root/datasploit ]]
 		then
 			echo -e ""$YS"10"$CE") Datasploit            Recon on Companies, People, Phone, Bitcoin..."
@@ -5767,80 +5763,6 @@ function website_tools
 				if [[ "$INSTALL" = "install" ]]
 				then
 					install_instaburst
-				else
-					continue
-				fi
-			fi
-		elif [[ "$WEB" = 9 ]]
-		then
-			then
-				while true
-				do
-					clear
-					dash_calc
-					echo -e " "$YS"1"$CE") New attack"
-					echo -e " "$YS"2"$CE") Continue previous attack"
-					echo -e " "$YS"3"$CE") View cracked passwords"
-					echo -e " "$YS"4"$CE") Create configuration"
-					echo -e " "$YS"b"$CE") Go back"
-					read C
-					clear
-					if [[ "$C" == 1 ]]
-					then
-						echo -e ""$YS"Username: "$CE""
-						read USRNM
-						echo -e ""$YS"Wordlist path: "$CE""
-						read WRDLST
-						if [[ ! -f "$WRDLST" ]]
-						then
-							echo -e ""$RS"File not found"$CE""
-							sleep 2
-							continue
-						fi
-						echo -e "$PAKTGB"
-						$READAK
-					elif [[ "$C" == 2 ]]
-					then
-						echo -e ""$YS"Username: "$CE""
-						read USRNM
-						echo -e ""$YS"Wordlist path: "$CE""
-						read WRDLST
-						if [[ ! -f "$WRDLST" ]]
-						then
-							echo -e ""$RS"File not found"$CE""
-							sleep 2
-							continue
-						fi
-						echo -e "$PAKTGB"
-						$READAK
-					elif [[ "$C" == 3 ]]
-					then
-						echo -e ""$YS"Username: "$CE""
-						read USRNM
-						echo -e "$PAKTGB"
-						$READAK
-					elif [[ "$C" == 4 ]]
-					then
-						echo -e "$PAKTGB"
-						$READAK
-					elif [[ "$C" == "b" || "$C" == "back" ]]
-					then
-						clear
-						break
-					elif [[ "$C" == 0 ]]
-					then
-						clear
-						exit
-					elif [[ "$C" == 00 ]]
-					then
-						exec bash $0
-					fi
-				done
-			else
-				echo -e "$TNI"
-				read INSTALL
-				if [[ "$INSTALL" = "install" ]]
-				then
 				else
 					continue
 				fi
