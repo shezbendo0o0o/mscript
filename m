@@ -10833,21 +10833,71 @@ function install_howdoi
 			./install.sh
 		fi
 	}
-	function install_yuki-chan
-	{
-		foldname="Yuki-Chan-The-Auto-Pentest"
-		gitlink="https://github.com/Yukinoshita47/Yuki-Chan-The-Auto-Pentest.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			chmod 777 wafninja joomscan install-perl-module.sh yuki.sh
-			chmod 777 Module/WhatWeb/whatweb
-			pip install -r requirements.txt
-			chmod +x *.sh
-			./install-perl-module.sh
-		fi
-	}
+function install_yuki
+{
+        echo -e ""$YS"Installing Yuki Chan..."$CE""
+
+        cd /root || return
+
+        apt-get update
+        apt-get install -y git curl wget python3 python3-pip python3-venv python3-full python3-setuptools python3-wheel \
+        nmap sqlmap hydra nikto whatweb whois dnsrecon wafw00f perl ruby
+
+        rm -rf /root/Yuki-Chan-The-Auto-Pentest
+
+        git clone --depth 1 https://github.com/Soldie/Yuki-Chan-The-Auto-Pentest.git /root/Yuki-Chan-The-Auto-Pentest
+
+        if [[ ! -d /root/Yuki-Chan-The-Auto-Pentest ]]
+        then
+                echo -e ""$RS"Failed to clone Yuki Chan."$CE""
+                sleep 3
+                return 1
+        fi
+
+        cd /root/Yuki-Chan-The-Auto-Pentest || return
+
+        chmod +x yuki.sh 2>/dev/null || true
+        chmod +x install-perl-module.sh 2>/dev/null || true
+        chmod +x wafninja 2>/dev/null || true
+        chmod +x joomscan 2>/dev/null || true
+
+        if [[ -f requirements.txt ]]
+        then
+                python3 -m venv /opt/yukichan-venv 2>/dev/null || true
+                /opt/yukichan-venv/bin/python -m pip install --upgrade pip setuptools wheel || true
+                /opt/yukichan-venv/bin/python -m pip install -r requirements.txt || true
+        fi
+
+        cat > /usr/local/bin/yukichan <<'EOF'
+#!/usr/bin/env bash
+cd /root/Yuki-Chan-The-Auto-Pentest || exit 1
+
+if [[ -f yuki.sh ]]
+then
+        bash yuki.sh "$@"
+else
+        echo "Yuki Chan launcher yuki.sh was not found."
+        ls -la
+fi
+EOF
+
+        chmod +x /usr/local/bin/yukichan
+
+        echo -e ""$GS"Yuki Chan installed successfully."$CE""
+        echo -e ""$YS"Run it with: yukichan"$CE""
+        sleep 3
+}
+
+function install_yuki-chan
+{
+        install_yuki
+}
+
+function install_yuki-chan
+{
+        install_yuki
+}
+
 	function install_socialfish
 	{
 		foldname="SocialFish"
