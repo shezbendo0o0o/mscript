@@ -1,4 +1,9 @@
 #! /bin/bash
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Restarting installer with sudo..."
+    exec sudo bash "$0" "$@"
+fi
+
 clear
 printf '\033]2;INSTALLER\a'
 echo -e "Press \e[1;33many key\e[0m to install the script..."
@@ -16,7 +21,7 @@ then
 	mkdir /root/mscript
 	cp -r "$DIR"/* /root/mscript
 	chmod +x /root/mscript/install.sh
-	gnome-terminal -e "bash /root/mscript/install.sh"
+	echo "Installation completed. Type this command to start MOU Script: m"
 fi
 echo -e "Installing mscript..."
 sleep 1
@@ -104,5 +109,10 @@ sleep 1
 clear
 echo -e "Congratulations...you are now using MOU Script..open new window then type m "
 sleep  4
-gnome-terminal -e m
+echo "Installation completed. Type this command to start MOU Script: m"
 exit
+
+
+mkdir -p /bin/mscript /usr/bin/mscript
+ln -sf /bin/mscript/m /usr/local/bin/m 2>/dev/null || true
+ln -sf /bin/mscript/m /usr/bin/m 2>/dev/null || true
