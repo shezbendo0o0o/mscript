@@ -9197,7 +9197,77 @@ function settings_menu
 					echo "$numofans" > "$LPATH"/settings/numofans.txt
 				elif [[ "$HOWCH" = 5 ]]
 				then
-					howdoi "$HOWDOI"
+					if command -v howdoi >/dev/null 2>&1
+					then
+					    if command -v howdoi >/dev/null 2>&1
+					    then
+					        HOWDOI_OUT="$(timeout 20 howdoi "$HOWDOI" 2>/tmp/mscript-howdoi-error.log || true)"
+
+					        if [[ -n "$HOWDOI_OUT" ]] && ! echo "$HOWDOI_OUT" | grep -qi "ERROR: Sorry"
+					        then
+					            echo "$HOWDOI_OUT"
+					        else
+					            echo "[!] Howdoi failed or StackOverflow blocked the request."
+					            echo "[*] Trying cheat.sh fallback..."
+					            echo ""
+
+					            QENC="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1].replace(" ","+")))' "$HOWDOI")"
+
+					            if command -v curl >/dev/null 2>&1
+					            then
+					                curl -fsSL "https://cheat.sh/$QENC" || echo "[!] No result from cheat.sh"
+					            else
+					                echo "[!] curl is not installed. Run: sudo apt install -y curl"
+					            fi
+					        fi
+					    else
+					        echo "[!] howdoi command not found."
+					        echo "[*] Trying cheat.sh fallback..."
+					        echo ""
+
+					        QENC="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1].replace(" ","+")))' "$HOWDOI")"
+
+					        if command -v curl >/dev/null 2>&1
+					        then
+					            curl -fsSL "https://cheat.sh/$QENC" || echo "[!] No result from cheat.sh"
+					        else
+					            echo "[!] curl is not installed. Run: sudo apt install -y curl"
+					        fi
+					    fi
+
+					    echo ""
+					    echo ""
+
+					    if [[ -n "$HOWDOI_OUT" ]] && ! echo "$HOWDOI_OUT" | grep -qi "ERROR: Sorry"
+					    then
+					        echo "$HOWDOI_OUT"
+					    else
+					        echo "[!] Howdoi failed or StackOverflow blocked the request."
+					        echo "[*] Trying cheat.sh fallback..."
+
+					        QENC="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1].replace(" ","+")))' "$HOWDOI")"
+
+					        if command -v curl >/dev/null 2>&1
+					        then
+					            curl -fsSL "https://cheat.sh/$QENC" || echo "[!] No result from cheat.sh"
+					        else
+					            echo "[!] curl is not installed. Run: sudo apt install -y curl"
+					        fi
+					    fi
+					else
+					    echo "[!] howdoi command not found."
+					    echo "[*] Trying cheat.sh fallback..."
+
+					    QENC="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1].replace(" ","+")))' "$HOWDOI")"
+
+					    if command -v curl >/dev/null 2>&1
+					    then
+					        curl -fsSL "https://cheat.sh/$QENC" || echo "[!] No result from cheat.sh"
+					    else
+					        echo "[!] curl is not installed. Run: sudo apt install -y curl"
+					    fi
+					fi
+
 					echo ""
 					echo ""
 					echo ""
@@ -9395,66 +9465,37 @@ function main_options
 	elif [[ "$YORNAA" = "l" ]]
 	then
 		local_ips
-	elif [[ "$YORNAA" = "17" ]]
-	then
-		if [[ ! -f "/usr/local/bin/howdoi" ]]
-		then
-			echo -e ""$RS"Howdoi is not installed.type '"$CE""$YS"install"$CE""$RS"' to install it."
-			read INSTALL
-			if [[ "$INSTALL" = "install" ]]
-			then
-				install_howdoi
-			fi
-		else
-			clear
-			if [[ -f "$LPATH"/settings/dispfull.txt ]]
-			then
-				read dispfull < "$LPATH"/settings/dispfull.txt
-				if [[ "$dispfull" = "true" ]]
-				then
-					df="-a"
-				fi
-			else
-				df=""
-			fi
-			if [[ -f "$LPATH"/settings/colorout.txt ]]
-			then
-				read colorout < "$LPATH"/settings/colorout.txt
-				if [[ "$colorout" = "true" ]]
-				then
-					co="-c"
-				fi
-			else
-				co=""
-			fi
-			if [[ -f "$LPATH"/settings/onlylink.txt ]]
-			then
-				read onlylink < "$LPATH"/settings/onlylink.txt
-				if [[ "$onlylink" = "true" ]]
-				then
-					ol="-l"
-				fi
-			else
-				ol=""
-			fi
-			if [[ -f "$LPATH"/settings/numofans.txt ]]
-			then
-				read numofans < "$LPATH"/settings/numofans.txt
-				if [[ "$numofans" = "true" ]]
-				then
-					na="-n "$numofans""
-				fi
-			else
-				na=""
-			fi
-			echo -e "How do i :  "
-			read HOW
-			howdoi "$HOWDOI"
-			echo ""
-			echo ""
-			echo ""
-			echo ""
-		fi
+elif [[ "$YORNAA" = "17" ]]
+then
+        clear
+        echo -e ""$BS"How do i :  "$CE""
+        read HOWDOI
+
+        if [[ -z "$HOWDOI" ]]
+        then
+                echo "[!] Empty question."
+                sleep 2
+        else
+                if ! command -v curl >/dev/null 2>&1
+                then
+                        apt-get update
+                        apt-get install -y curl
+                fi
+
+                QENC=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1].replace(" ","+")))' "$HOWDOI")
+
+                echo ""
+                echo "[*] Searching cheat.sh..."
+                echo ""
+
+                curl -fsSL "https://cheat.sh/$QENC" || echo "[!] No result from cheat.sh"
+
+                echo ""
+                echo ""
+                echo "Press any key to go back..."
+                read
+        fi
+
 	elif [[ "$YORNAA" = "settings" || "$YORNAA" = "s" ]]
 	then
 		settings_menu
