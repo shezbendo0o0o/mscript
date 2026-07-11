@@ -16,6 +16,9 @@
 {new} - {date.today()}
 - Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
+
 2.1.7 - 2026-07-11
 - Fixed author name to Moamen Alsayed.
 - Synced installed version with GitHub version.
