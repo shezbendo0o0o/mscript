@@ -11128,6 +11128,36 @@ function install_operative
 }
 
 
+function install_wifi-pumpkin
+{
+        echo -e ""$YS"Installing WiFi-Pumpkin3..."$CE""
+
+        apt-get update
+        apt-get install -y wifipumpkin3 hostapd dnsmasq wireless-tools net-tools
+
+        if command -v wifipumpkin3 >/dev/null 2>&1
+        then
+                mkdir -p /opt/WiFi-Pumpkin
+                echo -e ""$GS"WiFi-Pumpkin3 installed successfully."$CE""
+                echo -e ""$YS"Run it with: sudo wifipumpkin3"$CE""
+        else
+                echo -e ""$RS"WiFi-Pumpkin3 install failed."$CE""
+        fi
+
+        sleep 3
+}
+
+function install_wifipumpkin
+{
+        install_wifi-pumpkin
+}
+
+function install_wifipumpkin3
+{
+        install_wifi-pumpkin
+}
+
+
 #------------------------------------
 ####################################
 defaults_l
