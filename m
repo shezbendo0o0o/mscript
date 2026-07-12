@@ -5471,40 +5471,91 @@ function information_gathering
 				fi
 
 			fi
-		elif [[ "$INFOG" = "7" ]]
-		then
-			if command -v usufy >/dev/null 2>&1 || command -v usufy.py >/dev/null 2>&1 || command -v osrf >/dev/null 2>&1 || command -v osrframework-cli >/dev/null 2>&1 || [[ -d "/root/osrframework" ]]
-			then
-				while true
-				do
-					printf '\033]2;OSRFCONSOLE\a'
-					clear
-					echo -e ""$YS" 1"$CE") usufy"
-					echo -e ""$YS" 2"$CE") mailfy"
-					echo -e ""$YS" 3"$CE") searchfy"
-					echo -e ""$YS" 4"$CE") domainfy"
-					echo -e ""$YS" 5"$CE") phonefy"
-					echo -e ""$YS" 6"$CE") entify"
-					echo -e ""$YS" b"$CE") Go back"
-					echo -e ""$YS"00"$CE") Main menu"
-				#	echo -e ""$YS" 0"$CE") EXIT"
-					echo -e "Choose: "
-					read -e OSFR
-					clear
-					if [[ "$OSFR" = "1" ]]
-					then
-						echo -e "Use: usufy.py -n name1 name2 -p twitter facebook"
-						usufy.py
-						exit
-					elif [[ "$OSFR" = "2" ]]
-					then
-						echo -e "Use: mailfy.py -n name1"
-						mailfy.py
-						exit
-					elif [[ "$OSFR" = "3" ]]
-					then
-						searchfy.py
-						exit
+          elif [[ "$INFOG" = "7" ]]
+          then
+                  if command -v usufy >/dev/null 2>&1 || command -v mailfy >/dev/null 2>&1 || command -v searchfy >/dev/null 2>&1 || command -v domainfy >/dev/null 2>&1 || command -v phonefy >/dev/null 2>&1 || [[ -d "/root/osrframework" ]]
+                  then
+                          while true
+                          do
+                                  printf "\033]2;OSRFCONSOLE\a"
+                                  clear
+                                  echo -e ""$YS" 1"$CE") usufy"
+                                  echo -e ""$YS" 2"$CE") mailfy"
+                                  echo -e ""$YS" 3"$CE") searchfy"
+                                  echo -e ""$YS" 4"$CE") domainfy"
+                                  echo -e ""$YS" 5"$CE") phonefy"
+                                  echo -e ""$YS" b"$CE") Go back"
+                                  echo -e ""$YS"00"$CE") Main menu"
+                                  echo -e "Choose: "
+                                  read -e OSFR
+                                  clear
+
+                                  if [[ "$OSFR" = "1" ]]
+                                  then
+                                          echo "Example: -n targetname -p twitter github facebook"
+                                          echo "Or type only: targetname"
+                                          echo -n "usufy input: "
+                                          read -e -a OSR_ARGS
+
+                                          if [[ ${#OSR_ARGS[@]} -eq 0 ]]
+                                          then
+                                                  usufy --help
+                                          elif [[ "${OSR_ARGS[0]}" == -* ]]
+                                          then
+                                                  usufy "${OSR_ARGS[@]}"
+                                          else
+                                                  usufy -n "${OSR_ARGS[@]}"
+                                          fi
+
+                                          echo ""
+                                          echo "Press Enter to return to OSRConsole menu..."
+                                          read -r
+
+                                  elif [[ "$OSFR" = "2" ]]
+                                  then
+                                          echo "Example: -m test@example.com"
+                                          echo "Or type only: test@example.com"
+                                          echo -n "mailfy input: "
+                                          read -e -a OSR_ARGS
+
+                                          if [[ ${#OSR_ARGS[@]} -eq 0 ]]
+                                          then
+                                                  mailfy --help
+                                          elif [[ "${OSR_ARGS[0]}" == -* ]]
+                                          then
+                                                  mailfy "${OSR_ARGS[@]}"
+                                          elif [[ "${OSR_ARGS[0]}" == *"@"* ]]
+                                          then
+                                                  mailfy -m "${OSR_ARGS[@]}"
+                                          else
+                                                  mailfy -n "${OSR_ARGS[@]}"
+                                          fi
+
+                                          echo ""
+                                          echo "Press Enter to return to OSRConsole menu..."
+                                          read -r
+
+                                  elif [[ "$OSFR" = "3" ]]
+                                  then
+                                          echo "Example: -q targetname"
+                                          echo "Or type only: targetname"
+                                          echo -n "searchfy input: "
+                                          read -e -a OSR_ARGS
+
+                                          if [[ ${#OSR_ARGS[@]} -eq 0 ]]
+                                          then
+                                                  searchfy --help
+                                          elif [[ "${OSR_ARGS[0]}" == -* ]]
+                                          then
+                                                  searchfy "${OSR_ARGS[@]}"
+                                          else
+                                                  searchfy -q "${OSR_ARGS[@]}"
+                                          fi
+
+                                          echo ""
+                                          echo "Press Enter to return to OSRConsole menu..."
+                                          read -r
+
                                   elif [[ "$OSFR" = "4" ]]
                                   then
                                           echo "Example: -n targetname"
@@ -5519,52 +5570,59 @@ function information_gathering
                                           elif [[ "${OSR_ARGS[0]}" == -* ]]
                                           then
                                                   domainfy "${OSR_ARGS[@]}"
-                                  echo ""
-                                  echo "Press Enter to return to OSRConsole menu..."
-                                  read -r
-
                                           else
                                                   domainfy -n "${OSR_ARGS[@]}"
-                                  echo ""
-                                  echo "Press Enter to return to OSRConsole menu..."
-                                  read -r
-
                                           fi
 
-					elif [[ "$OSFR" = "5" ]]
-					then
-						phonefy.py
-						exit
-					elif [[ "$OSFR" = "6" ]]
-					then
-						entify.py
-						exit
-					elif [[ "$OSFR" = "0" ]]
-					then
-						exit
-					elif [[ "$OSFR" = "00" ]]
-					then
-						exec bash "$0"
-					elif [[ "$OSFR" = "back" || "$OSFR" = "b" ]]
-					then
-						break
-					else 
-						echo -e "Wrong choice"
-						sleep 0.3
-						clear
-						exec bash "$0"
-					fi
-				done
-			else
-				echo -e "$TNI"
-				read INSTALL
-				if [[ "$INSTALL" = "install" ]]
-				then
-					install_osrframework
-				else
-					continue
-				fi
-			fi
+                                          echo ""
+                                          echo "Press Enter to return to OSRConsole menu..."
+                                          read -r
+
+                                  elif [[ "$OSFR" = "5" ]]
+                                  then
+                                          echo "Example: -n 201001112222"
+                                          echo "Or type only: 201001112222"
+                                          echo -n "phonefy input: "
+                                          read -e -a OSR_ARGS
+
+                                          if [[ ${#OSR_ARGS[@]} -eq 0 ]]
+                                          then
+                                                  phonefy --help
+                                          elif [[ "${OSR_ARGS[0]}" == -* ]]
+                                          then
+                                                  phonefy "${OSR_ARGS[@]}"
+                                          else
+                                                  phonefy -n "${OSR_ARGS[@]}"
+                                          fi
+
+                                          echo ""
+                                          echo "Press Enter to return to OSRConsole menu..."
+                                          read -r
+
+                                  elif [[ "$OSFR" = "00" ]]
+                                  then
+                                          exec bash "$0"
+
+                                  elif [[ "$OSFR" = "back" || "$OSFR" = "b" ]]
+                                  then
+                                          break
+
+                                  else
+                                          echo -e "Wrong choice"
+                                          sleep 1
+                                  fi
+                          done
+                  else
+                          echo -e "$TNI"
+                          read INSTALL
+                          if [[ "$INSTALL" = "install" ]]
+                          then
+                                  install_osrframework
+                          else
+                                  continue
+                          fi
+                  fi
+
 		elif [[ "$INFOG" = 0 ]]
 		then
 			exit
