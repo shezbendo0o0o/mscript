@@ -5293,7 +5293,7 @@ function information_gathering
 		else
 			echo -e ""$RS" 3"$CE") "$RS"RED HAWK"$CE"              All in one tool"
 		fi
-		if [[ -d /root/Infoga ]]
+		if [[ -d /opt/Infoga ]]
 		then
 			echo -e ""$YS" 4"$CE") Infoga                Email Information Gathering"
 		else
@@ -5410,15 +5410,15 @@ function information_gathering
 			fi
 		elif [[ "$INFOG" = 4 ]]
 		then
-			if [[ -d /root/Infoga ]]
+			if [[ -d /opt/Infoga ]]
 			then
 				echo -e "Domain to search:"
 				read INFOTARG
 				echo -e "Data source(e.g. "$YS"all"$CE","$YS"google"$CE","$YS"bing"$CE","$YS"yahoo"$CE","$YS"pgp"$CE"): "
 				read INFOSOUR
 				clear
-				cd /root/Infoga
-				python infoga.py -t $INFOTARG -s $INFOSOUR 
+				cd /opt/Infoga
+				infoga -t $INFOTARG -s $INFOSOUR 
 				echo -e "$PAKTGB"
 				$READAK
 				cd
@@ -10251,17 +10251,6 @@ check_if_ks
 			python setup.py install
 		fi
 	}
-	function install_infoga
-	{
-		foldname="Infoga"
-		gitlink="https://github.com/m4ll0k/Infoga.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install -r requirements.txt
-		fi
-	}
 	function install_nwatch
 	{
 		foldname="nWatch"
@@ -10803,7 +10792,7 @@ function install_yuki
 {
         echo -e ""$YS"Installing Yuki Chan..."$CE""
 
-        cd /root || return
+        cd /opt || return
 
         apt-get update
         apt-get install -y git curl wget python3 python3-pip python3-venv python3-full python3-setuptools python3-wheel \
@@ -10875,7 +10864,7 @@ function install_mougather
 {
         echo -e ""$YS"Installing MouGather..."$CE""
 
-        cd /root || return
+        cd /opt || return
 
         apt-get update
         apt-get install -y git curl python3 python3-pip python3-venv python3-full wkhtmltopdf whois traceroute php
@@ -10968,6 +10957,64 @@ function install_osrframework
                 echo -e ""$RS"OSRFramework install failed or command not found."$CE""
         fi
 
+        sleep 3
+}
+
+
+function install_infoga
+{
+        echo -e ""$YS"Installing Infoga..."$CE""
+
+        cd /opt || return
+
+        apt-get update
+        apt-get install -y git python3 python3-pip python3-venv python3-full
+
+        rm -rf /opt/Infoga /root/infoga
+
+        git clone --depth 1 https://github.com/Security-Tools-Alliance/Infoga.git /opt/Infoga
+
+        if [[ ! -d /opt/Infoga ]]
+        then
+                echo -e ""$RS"Failed to clone Infoga."$CE""
+                sleep 3
+                return 1
+        fi
+
+        cd /opt/Infoga || return
+
+        python3 -m venv /opt/infoga-venv
+
+        /opt/infoga-venv/bin/python -m pip install --upgrade pip setuptools wheel || true\n\n        /opt/infoga-venv/bin/python -m pip install colorama requests dnspython beautifulsoup4 lxml html5lib urllib3 certifi chardet || true
+
+        if [[ -f requirements.txt ]]
+        then
+                /opt/infoga-venv/bin/python -m pip install -r requirements.txt || true
+        fi
+
+        if [[ -f setup.py ]]
+        then
+                /opt/infoga-venv/bin/python setup.py install || true
+        fi
+
+        cat > /usr/local/bin/infoga <<'EOF'
+#!/usr/bin/env bash
+cd /opt/Infoga || exit 1
+
+if [[ -x /opt/infoga-venv/bin/python ]]
+then
+        exec /opt/infoga-venv/bin/python infoga.py "$@"
+else
+        exec infoga "$@"
+fi
+EOF
+
+        chmod -R a+rX /opt/Infoga /opt/infoga-venv 2>/dev/null || true
+        chmod +x /usr/local/bin/infoga
+        ln -sf /usr/local/bin/infoga /usr/bin/infoga
+
+        echo -e ""$GS"Infoga installed successfully."$CE""
+        echo -e ""$YS"Run it with: infoga"$CE""
         sleep 3
 }
 
