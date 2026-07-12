@@ -731,8 +731,8 @@ function listshortcuts
 	elif [[ "$nn" = "28" ]]
 	then
 		TITLE="nWatch"
-		NAMECD="cd /root/nWatch"
-		KSSET="python nwatch.py"
+		NAMECD="cd /opt/nWatch"
+		KSSET="nwatch"
 	elif [[ "$nn" = "29" ]]
 	then
 		TITLE="Eternal_scanner"
@@ -3267,7 +3267,7 @@ function wifi_tools
 	else
 		echo -e ""$RS"21"$CE") "$RS"Routersploit"$CE"          Find/exploit router vulnerabilities"
 	fi
-	if [[ -d /root/nWatch ]]
+	if [[ -d /opt/nWatch ]]
 	then
 		echo -e ""$YS"22"$CE") nWatch                IP scanner/OS detection"
 	else
@@ -3734,10 +3734,10 @@ function wifi_tools
 		fi
 	elif [[ "$APPP" = "22" ]]
 	then
-		if [[ -d "/root/nWatch" ]]
+		if [[ -d "/opt/nWatch" ]]
 		then
-			cd /root/nWatch
-			python nwatch.py
+			cd /opt/nWatch
+			nwatch
 			cd
 		else
 			echo -e "$TNI"
@@ -10256,24 +10256,72 @@ check_if_ks
 			python setup.py install
 		fi
 	}
-	function install_nwatch
-	{
-		foldname="nWatch"
-		gitlink="https://github.com/suraj-root/nWatch.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install scapy
-			pip install colorama
-			pip install nmap
-			pip install ctypes
-			pip2.7 install scapy
-			pip2.7 install colorama
-			pip2.7 install nmap
-			pip2.7 install ctypes
-		fi
-	}
+function install_nwatch
+{
+        echo -e ""$YS"Installing nWatch..."$CE""
+
+        apt-get update
+        apt-get install -y git python2.7 nmap curl sudo python3
+
+        rm -rf /opt/nWatch /opt/nWatch
+
+        git clone --depth 1 https://github.com/Cyber-Forensic/nWatch.git /opt/nWatch || git clone --depth 1 https://github.com/Cyber-Forensic/nWatch.git /opt/nWatch
+
+        if [[ ! -d /opt/nWatch ]]
+        then
+                echo -e ""$RS"Failed to clone nWatch."$CE""
+                sleep 3
+                return 1
+        fi
+
+        if ! python2.7 -m pip --version >/dev/null 2>&1
+        then
+                curl -k -L https://bootstrap.pypa.io/pip/2.7/get-pip.py -o /tmp/get-pip2.py
+                python2.7 /tmp/get-pip2.py || true
+        fi
+
+        python2.7 -m pip install --no-cache-dir "python-nmap==0.6.1" "scapy==2.4.5" "colorama" || true
+
+        python3 - <<'PYNWATCH'
+from pathlib import Path
+
+p = Path("/opt/nWatch/nwatch.py")
+if p.exists():
+    s = p.read_text(errors="ignore")
+    s = s.replace(
+        "self.addresses.get(AF_INET)[0]",
+        "(self.addresses.get(AF_INET)[0] if self.addresses.get(AF_INET) else \"N/A\")"
+    )
+    s = s.replace(
+        "self.addresses.get(AF_INET6)[0]",
+        "(self.addresses.get(AF_INET6)[0] if self.addresses.get(AF_INET6) else \"N/A\")"
+    )
+    p.write_text(s)
+PYNWATCH
+
+        chmod -R a+rX /opt/nWatch
+
+        cat > /usr/local/bin/nwatch <<'EOF'
+#!/usr/bin/env bash
+
+if [[ "$(id -u)" -ne 0 ]]
+then
+    exec sudo -E /usr/local/bin/nwatch "$@"
+fi
+
+cd /opt/nWatch || exit 1
+exec python2.7 nwatch.py "$@"
+EOF
+
+        chmod +x /usr/local/bin/nwatch
+        ln -sf /usr/local/bin/nwatch /usr/bin/nwatch
+
+        echo -e ""$GS"nWatch installed successfully."$CE""
+        echo -e ""$YS"Run it with: nwatch"$CE""
+        sleep 3
+}
+
+
 	function install_eternalscanner
 	{
 		foldname="eternal_scanner"
