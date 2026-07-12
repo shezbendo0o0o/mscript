@@ -585,6 +585,281 @@ else
 	fi
 fi
 }
+function listshortcuts
+{	
+	EXTRA1=""
+	if [[ "$nn" = "1" ]]
+	then
+		TITLE="Fluxion"
+		NAMECD="cd /root/fluxion"
+		KSSET="./fluxion*"
+	elif [[ "$nn" = "2" ]]
+	then
+		TITLE="Zirikatu"
+		NAMECD="cd /root/zirikatu"
+		KSSET="./zirikatu.sh"
+	elif [[ "$nn" = "3" ]]
+	then
+		TITLE="Wifite"
+		NAMECD=""
+		KSSET="wifite"
+	elif [[ "$nn" = "4" ]]
+	then
+		TITLE="Wifiphisher"
+		NAMECD=""
+		KSSET="wifiphisher"
+	elif [[ "$nn" = "5" ]]
+	then
+		TITLE="Zatacker"
+		NAMECD="cd /root/Zatacker"
+		KSSET="./ZT.sh"
+	elif [[ "$nn" = "6" ]]
+	then
+		TITLE="Morpheus"
+		NAMECD="cd /root/morpheus"
+		KSSET="./morpheus.sh"
+	elif [[ "$nn" = "7" ]]
+	then
+		TITLE="Hakku"
+		NAMECD="cd /root/hakkuframework"
+		KSSET="./hakku"
+	elif [[ "$nn" = "8" ]]
+	then
+		TITLE="Trity"
+		NAMECD=""
+		KSSET="trity"
+	elif [[ "$nn" = "9" ]]
+	then
+		TITLE="Cupp"
+		NAMECD="cd /root/cupp"
+		KSSET="python cupp.py -i"
+	elif [[ "$nn" = "10" ]]
+	then
+		TITLE="Dracnmap"
+		NAMECD="cd /root/Dracnmap"
+		KSSET="./dracnmap-v*.sh"
+	elif [[ "$nn" = "11" ]]
+	then
+		TITLE="Fern"
+		NAMECD=""
+		KSSET="fern-wifi-cracker"
+	elif [[ "$nn" = "12" ]]
+	then
+		TITLE="KickThemOut"
+		NAMECD="cd /root/kickthemout"
+		KSSET="python kickthemout.py"
+	elif [[ "$nn" = "13" ]]
+	then
+		TITLE="Ghost-Phisher"
+		NAMECD=""
+		KSSET="ghost-phisher"
+	elif [[ "$nn" = "14" ]]
+	then
+		TITLE="Xerxes"
+		NAMECD="cd /root/xerxes"
+		KSSET="./xerxes"
+	elif [[ "$nn" = "15" ]]
+	then
+		TITLE="Katana"
+		NAMECD=""
+		KSSET="ktf.console"
+	elif [[ "$nn" = "16" ]]
+	then
+		TITLE="Airgeddon"
+		NAMECD="cd /root/airgeddon"
+		KSSET="./airgeddon.sh"
+	elif [[ "$nn" = "17" ]]
+	then
+		TITLE="Websploit"
+		NAMECD=""
+		KSSET="websploit"
+	elif [[ "$nn" = "18" ]]
+	then
+		TITLE="BeeLogger"
+		NAMECD="cd /root/BeeLogger"
+		KSSET="python bee.py"
+	elif [[ "$nn" = "19" ]]
+	then
+		TITLE="Ezsploit"
+		NAMECD="cd /root/exsploit"
+		KSSET="./ezsploit.sh"
+	elif [[ "$nn" = "20" ]]
+	then
+		TITLE="Pupy"
+		NAMECD="cd /root/pupy/pupy"
+		KSSET="./pupysh.py"
+	elif [[ "$nn" = "21" ]]
+	then
+		TITLE="TheFatRat"
+		NAMECD="cd /root/TheFatRat"
+		KSSET="./fatrat"
+	elif [[ "$nn" = "22" ]]
+	then
+		TITLE="Angry_IP_Scanner"
+		NAMECD=" "
+		KSSET="ipscan"
+	#~ elif [[ "$nn" = "23" ]]
+	#~ then
+		#~ TITLE="Sniper"
+		#~ NAMECD='read -p 'DOMAIN:' DOMAIN'
+		#~ KSSET="/usr/local/bin/mscript-sniper "$DOMAIN""
+	elif [[ "$nn" = "23" ]]
+	then
+		TITLE="ReconDog"
+		NAMECD="cd /root/ReconDog"
+		KSSET="python dog.py"
+	elif [[ "$nn" = "24" ]]
+	then
+		TITLE="RED_HAWK"
+		NAMECD="cd /root/RED_HAWK"
+		KSSET="php rhawk.php"
+	elif [[ "$nn" = "25" ]]
+	then
+		TITLE="Winpayloads"
+		NAMECD="cd /root/Winpayloads"
+		KSSET="./WinPayloads.py"
+	elif [[ "$nn" = "26" ]]
+	then
+		TITLE="CHAOS"
+		NAMECD="cd /root/CHAOS"
+		KSSET="go run CHAOS.go"
+	elif [[ "$nn" = "27" ]]
+	then
+		TITLE="Routersploit"
+		NAMECD="cd /root/routersploit"
+		KSSET="./rsf.py"
+	elif [[ "$nn" = "28" ]]
+	then
+		TITLE="nWatch"
+		NAMECD="cd /root/nWatch"
+		KSSET="python nwatch.py"
+	elif [[ "$nn" = "29" ]]
+	then
+		TITLE="Eternal_scanner"
+		NAMECD="cd /root/eternal_scanner"
+		KSSET="./escan"
+	elif [[ "$nn" = "30" ]]
+	then
+		TITLE="LALIN"
+		NAMECD="cd /root/LALIN"
+		KSSET="./Lalin.sh"
+	elif [[ "$nn" = "31" ]]
+	then
+		TITLE="Shellter"
+		NAMECD=""
+		KSSET="shellter"
+	elif [[ "$nn" = "32" ]]
+	then
+		TITLE="Netattack2"
+		NAMECD="cd /root/netattack2"
+		KSSET="python2 netattack2.py"
+	elif [[ "$nn" = "33" ]]
+	then
+		TITLE="Operative-framework"
+		NAMECD="cd /opt/Operative-Framework"
+		KSSET="operative-framework"
+	elif [[ "$nn" = "34" ]]
+	then
+		TITLE="Koadic"
+		NAMECD="cd /root/koadic"
+		KSSET="./koadic"
+	elif [[ "$nn" = "35" ]]
+	then
+		TITLE="Empire"
+		NAMECD="cd /root/Empire"
+		KSSET="./empire"
+	elif [[ "$nn" = "36" ]]
+	then
+		TITLE="Meterpreter_Paranoid_Mode"
+		NAMECD="cd /root/Meterpreter_Paranoid_Mode-SSL"
+		KSSET="./Meterpreter_Paranoid_Mode.sh"
+	elif [[ "$nn" = "37" ]]
+	then
+		TITLE="Wifi-Pumpkin"
+		NAMECD=""
+		KSSET="wifi-pumpkin"
+	elif [[ "$nn" = "38" ]]
+	then
+		TITLE="Veil"
+		NAMECD="cd /root/Veil"
+		KSSET="./Veil.py"
+	elif [[ "$nn" = "39" ]]
+	then
+		TITLE="Leviathan"
+		NAMECD="cd /root/leviathan"
+		KSSET="python leviathan.py"
+	elif [[ "$nn" = "40" ]]
+	then
+		TITLE="Gloom-Framework"
+		NAMECD="cd /root/Gloom-Framework"
+		KSSET="python2 gloom.py"
+	elif [[ "$nn" = "41" ]]
+	then
+		TITLE="Arcanus"
+		NAMECD="cd /root/ARCANUS"
+		KSSET="./ARCANUS"
+	elif [[ "$nn" = "42" ]]
+	then
+		TITLE="LFISuite"
+		NAMECD="cd /root/LFISuite"
+		KSSET="python lfisuite.py"
+	elif [[ "$nn" = "43" ]]
+	then
+		TITLE="DKMC"
+		NAMECD="cd /root/DKMC"
+		KSSET="python dkmc.py"
+	elif [[ "$nn" = "44" ]]
+	then
+		TITLE="SecHub"
+		NAMECD=""
+		KSSET="sechub"
+	elif [[ "$nn" = "45" ]]
+	then
+		TITLE="Beef-xss"
+		NAMECD="cd /usr/share/beef-xss"
+		KSSET="./beef"
+	elif [[ "$nn" = "46" ]]
+	then
+		TITLE="Evil-Droid"
+		NAMECD="cd /root/Evil-Droid"
+		KSSET="./evil-droid"
+	elif [[ "$nn" = "47" ]]
+	then
+		TITLE="NoSQLMap"
+		NAMECD="cd /root/NoSQLMap"
+		KSSET="python nosqlmap.py"
+	elif [[ "$nn" = "48" ]]
+	then
+		TITLE="EggShell"
+		NAMECD="cd /root/EggShell"
+		KSSET="python eggshell.py"
+	elif [[ "$nn" = "49" ]]
+	then
+		TITLE="Zerodoor"
+		NAMECD="cd /root/Zerodoor"
+		KSSET="python zerodoor.py"
+	elif [[ "$nn" = "50" ]]
+	then
+		TITLE="AutoSploit"
+		NAMECD="cd /root/AutoSploit"
+		KSSET="python autosploit.py"
+	elif [[ "$nn" = "51" ]]
+	then
+		TITLE="Enigma"
+		NAMECD="cd /root/Enigma"
+		KSSET="python enigma.py"
+	elif [[ "$nn" = "52" ]]
+	then
+		TITLE="SocialFish"
+		NAMECD="cd /root/SocialFish"
+		KSSET="python SocialFish.py"
+	elif [[ "$nn" = "53" ]]
+	then
+		TITLE="Yuki-Chan-The-Auto-Pentest"
+		NAMECD="cd /root/Yuki-Chan-The-Auto-Pentest"
+		KSSET="./yuki.sh"
+	fi
+}
 function reinstall_tools
 {
 while true
@@ -2851,6 +3126,869 @@ do
 		fi
 	fi
 done
+}
+function wifi_tools
+{
+	while true
+	do
+	printf '\033]2;WIFI TOOLS\a'
+	clear
+	TERMINALTITLE="WIFI TOOLS"
+	dash_calc
+	if [[ -d /root/fluxion ]]
+	then
+		echo -e ""$YS" 1"$CE") Fluxion               The future of MITM WPA attacks"
+	else
+		echo -e ""$RS" 1"$CE") "$RS"Fluxion"$CE"               The future of MITM WPA attacks"
+	fi
+	if [[ -f /usr/bin/wifite ]]
+	then
+		echo -e ""$YS" 2"$CE") Wifite                Automated wireless attack tool"
+	else
+		echo -e ""$RS" 2"$CE") "$RS"Wifite"$CE"               Automated wireless attack tool"
+	fi
+	if [[ -d /root/wifiphisher ]]
+	then
+		echo -e ""$YS" 3"$CE") Wifiphisher           Automated phishing attacks against Wi-Fi clients"
+	else
+		echo -e ""$RS" 3"$CE") "$RS"Wifiphisher"$CE"           Automated phishing attacks against Wi-Fi clients"
+	fi
+	if [[ -d /root/Zatacker ]]
+	then
+		echo -e ""$YS" 4"$CE") Zatacker              MITM-NMAP-Mail Spammer..(Install it manually)"
+	else
+		echo -e ""$RS" 4"$CE") "$RS"Zatacker"$CE"              MITM-NMAP-Mail Spammer..(Install it manually)"
+	fi
+	if [[ -d /root/morpheus ]]
+	then
+		echo -e ""$YS" 5"$CE") Morpheus              Automated Ettercap TCP/IP Hijacking Tool"
+	else
+		echo -e ""$RS" 5"$CE") "$RS"Morpheus"$CE"              Automated Ettercap TCP/IP Hijacking Tool"
+	fi
+	#~ if [[ -d /root/osrframework ]]
+	#~ then
+		#~ echo -e ""$YS" 6"$CE") Osrfconsole           Checks usernames-phones to platforms etc.."
+	#~ else
+		#~ echo -e ""$RS" 6"$CE") "$RS"Osrfconsole"$CE"           Checks usernames-phones to platforms etc.."
+	#~ fi
+	if [[ -d /root/opensource ]]
+	then
+		echo -e ""$YS" 6"$CE") Netool-toolkit        MitM pentesting opensource toolkit"
+	else
+		echo -e ""$RS" 6"$CE") "$RS"Netool-toolkit"$CE"        MitM pentesting opensource toolkit"
+	fi
+	if [[ -d /root/hakkuframework ]]
+	then
+		echo -e ""$YS" 7"$CE") Hakku                 Penetration testing tools"
+	else
+		echo -e ""$RS" 7"$CE") "$RS"Hakku"$CE"                 Penetration testing tools"
+	fi
+	if [[ -d /root/Trity ]]
+	then
+		echo -e ""$YS" 8"$CE") Trity                 Advanced pentesting framework"
+	else
+		echo -e ""$RS" 8"$CE") "$RS"Trity"$CE"                 Advanced pentesting framework"
+	fi
+	if [[ -d /root/Dracnmap ]]
+	then				
+		echo -e ""$YS" 9"$CE") Dracnmap              Many scan options"
+	else
+		echo -e ""$RS" 9"$CE") "$RS"Dracnmap"$CE"              Many scan options"
+	fi
+	if [[ -d "/usr/share/fern-wifi-cracker" ]]
+	then	
+		echo -e ""$YS"10"$CE") Fern                  Wifi cracker GUI"
+	else
+		echo -e ""$RS"10"$CE") "$RS"Fern"$CE"                  Wifi cracker GUI"
+	fi
+	if [[ -f /usr/sbin/netdiscover ]]
+	then	
+		echo -e ""$YS"11"$CE") Netdiscover           Network address discovering tool"
+	else
+		echo -e ""$RS"11"$CE") "$RS"Netdiscover"$CE"           Network address discovering tool"
+	fi
+	if [[ -d /root/kickthemout ]]
+	then	
+		echo -e ""$YS"12"$CE") KickThemOut           Kick devices off your network"
+	else
+		echo -e ""$RS"12"$CE") "$RS"KickThemOut"$CE"           Kick devices off your network"
+	fi
+	if [[ -d "/usr/share/ghost-phisher" ]]
+	then	
+		echo -e ""$YS"13"$CE") Ghost-Phisher         Fake AP,MITM,Session hijacking etc..."
+	else
+		echo -e ""$RS"13"$CE") "$RS"Ghost-Phisher"$CE"         Fake AP,MITM,Session hijacking etc..."
+	fi
+	if [[ -d /root/The-Eye ]]
+	then	
+		echo -e ""$YS"14"$CE") The Eye               Detects ARP poisoning DNS spoofing etc..."
+	else
+		echo -e ""$RS"14"$CE") "$RS"The Eye"$CE"               Detects ARP poisoning DNS spoofing etc..."
+	fi
+	if [[ -d /root/xerxes ]]
+	then	
+		echo -e ""$YS"15"$CE") Xerxes                The most powerful DoS tool(CAUTION)"
+	else
+		echo -e ""$RS"15"$CE") "$RS"Xerxes"$CE"                The most powerful DoS tool(CAUTION)"
+	fi
+	if [[ -d /root/KatanaFramework ]]
+	then
+		echo -e ""$YS"16"$CE") Katana Framework      Many penetration testing features"
+	else
+		echo -e ""$RS"16"$CE") "$RS"Katana Framework"$CE"      Many penetration testing features"
+	fi
+	if [[ -d /root/airgeddon ]]
+	then
+		echo -e ""$YS"17"$CE") Airgeddon             Audit wireless networks."
+	else
+		echo -e ""$RS"17"$CE") "$RS"Airgeddon"$CE"             Audit wireless networks."
+	fi
+	if [[ -f /usr/bin/websploit ]]
+	then
+		echo -e ""$YS"18"$CE") Websploit             Advanced MITM framework"
+	else
+		echo -e ""$RS"18"$CE") "$RS"Websploit"$CE"             Advanced MITM framework"
+	fi
+	if [[ -d /etc/openvas ]]
+	then
+		echo -e ""$YS"19"$CE") Openvas               Vulnerability scanner LAN"
+	else
+		echo -e ""$RS"19"$CE") "$RS"Openvas"$CE"               Vulnerability scanner LAN"
+	fi
+	if [[ -f /usr/bin/ipscan ]]
+	then
+		echo -e ""$YS"20"$CE") Angry IP Scanner      IP Scanner"
+	else
+		echo -e ""$RS"20"$CE") "$RS"Angry IP Scanner"$CE"      IP Scanner"
+	fi
+	if [[ -d /root/routersploit ]]
+	then
+		echo -e ""$YS"21"$CE") Routersploit          Find/exploit router vulnerabilities"
+	else
+		echo -e ""$RS"21"$CE") "$RS"Routersploit"$CE"          Find/exploit router vulnerabilities"
+	fi
+	if [[ -d /root/nWatch ]]
+	then
+		echo -e ""$YS"22"$CE") nWatch                IP scanner/OS detection"
+	else
+		echo -e ""$RS"22"$CE") "$RS"nWatch"$CE"                IP scanner/OS detection"
+	fi
+	if [[ -d /root/eternal_scanner ]]
+	then
+		echo -e ""$YS"23"$CE") Eternal scanner       Scans hosts for eternalblue vulnerabilities"
+	else
+		echo -e ""$RS"23"$CE") "$RS"Eternal scanner"$CE"       Scans hosts for eternalblue vulnerabilities"
+	fi
+	if [[ -d /root/eaphammer ]]
+	then
+		echo -e ""$YS"24"$CE") Eaphammer             Evil twin attacks against WPA2-Enterprise networks"
+	else
+		echo -e ""$RS"24"$CE") "$RS"Eaphammer"$CE"             Evil twin attacks against WPA2-Enterprise networks"
+	fi
+	if [[ -d /root/VMR ]]
+	then
+		echo -e ""$YS"25"$CE") VMR                   Best WPS cracker, mdk3-v6"
+	else
+		echo -e ""$RS"25"$CE") "$RS"VMR"$CE"                   Best WPS cracker, mdk3-v6"
+	fi
+	if [[ -d /root/netattack2 ]]
+	then
+		echo -e ""$YS"26"$CE") Netattack3            Advanced network scan and attack script"
+	else
+		echo -e ""$RS"26"$CE") "$RS"Netattack2"$CE"            Advanced network scan and attack script"
+	fi
+	if [[ -f /usr/bin/wifi-pumpkin ]]
+	then
+		echo -e ""$YS"27"$CE") Wifi-Pumpkin          Framework for Rogue Wi-Fi Access Point Attack"
+	else
+		echo -e ""$RS"27"$CE") "$RS"Wifi-Pumpkin"$CE"          Framework for Rogue Wi-Fi Access Point Attack"
+	fi
+	if [[ -d /root/Gloom-Framework ]]
+	then
+		echo -e ""$YS"28"$CE") Gloom                 Penetration Testing Framework"
+	else
+		echo -e ""$RS"28"$CE") "$RS"Gloom"$CE"                 Penetration Testing Framework"
+	fi
+	if [[ -f /usr/bin/sechub ]]
+	then
+		echo -e ""$YS"29"$CE") secHub                Security/Hacking Kit"
+	else
+		echo -e ""$RS"29"$CE") "$RS"secHub"$CE"                Security/Hacking Kit"
+	fi
+	if [[ -d /root/SocialFish ]]
+	then
+		echo -e ""$YS"30"$CE") SocialFish            Ultimate phishing tool with Ngrok integrated"
+	else
+		echo -e ""$RS"30"$CE") "$RS"SocialFish"$CE"            Ultimate phishing tool with Ngrok integrated"
+	fi
+	if [[ -d /root/HT-WPS-Breaker ]]
+	then
+		echo -e ""$YS"31"$CE") HT-WPS-Breaker            High Touch WPS Breaker"
+	else
+		echo -e ""$RS"31"$CE") "$RS"HT-WPS-Breaker"$CE"            High Touch WPS Breaker"
+	fi
+	echo -e ""$YS" b"$CE") Go back"
+	echo -e ""$YS"00"$CE") Main menu"
+	#echo -e ""$YS" 0"$CE") EXIT"
+	echo -e "Choose: "
+	read -e APPP
+	clear
+	if [[ "$APPP" = "1" ]]
+	then
+		if [[ -d /root/fluxion ]]
+		then
+			cd /root/fluxion
+			#~ if [[ -f /root/fluxion/fluxion ]]
+			#~ then
+				./fluxion*
+			#~ elif [[ -f /root/fluxion/fluxion.sh ]]
+			#~ then
+				#~ ./fluxion.sh
+			#~ fi
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_fluxion
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "2" ]]
+	then
+		if [[ -f /usr/bin/wifite ]]
+		then
+			wifite
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_wifite
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "3" ]]
+	then
+		if [[ -d /root/wifiphisher ]]
+		then
+			clear
+			wifiphisher
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_wifiphisher
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "4" ]]
+	then
+		if [[ -d /root/Zatacker ]]
+		then
+			if [[ -d "/root/Zatacker" ]]
+			then	
+				cd /root/Zatacker
+				./ZT.sh
+				cd
+			else
+				echo -e "You have to install it manually since its not on github.Sorry."
+				sleep 4
+				exec bash "$0"
+			fi
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_zatacker
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "5" ]]
+	then
+		if [[ -d /root/morpheus ]]
+		then
+			cd /root/morpheus
+			./morpheus.sh
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_morpheus
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "6" ]]
+	then
+		if [[ -d "/root/opensource" ]]
+		then
+			cd /root/opensource
+			./netool.sh
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_netool
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "7" ]]
+	then
+		if [[ -d /root/hakkuframework ]]
+		then
+			echo -e "type: 'show modules' to start"
+			sleep 2
+			clear
+			cd /root/hakkuframework
+			./hakku
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_hakku
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "8" ]]
+	then
+		if [[ -d /root/Trity ]]
+		then
+			echo -e "type: 'help' to start"
+			sleep 2
+			clear
+			trity			
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_trity
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "9" ]]
+	then
+		if [[ -d "/root/Dracnmap" ]]
+		then
+			cd /root/Dracnmap/
+			./dracnmap-v*.sh	
+			cd		
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_dracnmap
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "10" ]]
+	then
+		if [[ -d "/usr/share/fern-wifi-cracker" ]]
+		then
+			cd /root/Fern-Wifi-Cracker
+			python execute.py
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_fern
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "11" ]]
+	then
+		if [[ -f /usr/sbin/netdiscover ]]
+		then
+			echo -e "Range ("$YS"Enter"$CE"=2.1.7.0/24):"
+			read NRANGE
+			if [[ -z $NRANGE ]]
+			then
+				NRANGE="2.1.7.0/24"
+			fi
+			netdiscover -r $NRANGE -i "$WLANN"
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_netdiscover
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "12" ]]
+	then
+		if [[ -d "/root/kickthemout" ]]
+		then
+			cd /root/kickthemout
+			python kickthemout.py
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_kickthemout
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "13" ]]
+	then
+		if [[ -d "/usr/share/ghost-phisher" ]]
+		then	
+			cd /root/ghost-phisher/Ghost-Phisher
+			python ghost.py
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_ghostphisher
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "14" ]]
+	then
+		if [[ -d "/root/The-Eye" ]]
+		then
+			cd /root/The-Eye
+			./TheEye
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_theeye
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "15" ]]
+	then
+		if [[ -d "/root/xerxes" ]]
+		then
+			echo -e "Do you own the site you want to DoS?"$YNONLY""
+			read DOSTERM
+			if [[ "$DOSTERM" = "y" ]]
+			then
+
+				clear
+				echo -e "Enter your site(e.g: iownthissite.com): "
+				echo -e "(without www)"
+				read -e SITEDOS
+				clear
+				echo -e "Launching www.isitdownrightnow.com for $SITEDOS"
+				sleep 4
+				gio open http://www.isitdownrightnow.com/"$SITEDOS".html
+				clear	
+				cd /root/xerxes
+				SITEDOSX=www.$SITEDOS
+				echo -e "Press "$YS"any key"$CE" to start DoS on $SITEDOSX"
+				$READAK
+				./xerxes $SITEDOSX 80
+			else
+				clear
+				echo -e "Then never try this."
+				sleep 3
+				exec bash "$0"
+			fi
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_xerxes
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "16" ]]
+	then
+		if [[ -d "/usr/share/KatanaFramework" ]]
+		then
+			ktf.console
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_katana
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "17" ]]
+	then
+		if [[ -d "/root/airgeddon" ]]
+		then
+			cd /root/airgeddon
+			./airgeddon.sh
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_airgeddon
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "18" ]]
+	then
+		if [[ -d "/usr/share/websploit" ]]
+		then
+			websploit
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_websploit
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "19" ]]
+	then
+		if [[ -d /etc/openvas ]]
+		then
+			echo -e "Start or stop?("$YS"start"$CE"/"$YS"stop"$CE")"
+			read -e SORS
+			if [[ "$SORS" == "start" ]]
+			then
+				netstat -nltp
+				openvas-start
+				echo -e "Launching firefox..."
+				sleep 1
+				firefox https://2.1.7.1:9392
+			else
+				openvas-stop
+			fi
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_openvas
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "20" ]]
+	then
+		if [[ -d "/usr/lib/ipscan" ]]
+		then
+			bash /usr/bin/ipscan & disown
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_angryip
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "21" ]]
+	then
+		if [[ -d "/root/routersploit" ]]
+		then
+			cd /root/routersploit
+			./rsf.py
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_routersploit
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "22" ]]
+	then
+		if [[ -d "/root/nWatch" ]]
+		then
+			cd /root/nWatch
+			python nwatch.py
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_nwatch
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "23" ]]
+	then
+		if [[ -d "/root/eternal_scanner" ]]
+		then
+			cd /root/eternal_scanner
+			./escan
+			cd
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_eternalscanner
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "24" ]]
+	then
+		if [[ -d "/root/eaphammer" ]]
+		then
+			eaphammer_automation
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_eaphammer
+			else
+				continue
+			fi
+		fi
+		cd
+	elif [[ "$APPP" = "25" ]]
+	then
+		if [[ -d "/root/VMR" ]]
+		then
+			cd /root/VMR
+			./VMR-MDK-K2-2017R-012x2.sh
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_vmr
+			else
+				continue
+			fi
+		fi
+		cd
+	elif [[ "$APPP" = "26" ]]
+	then
+		if [[ -d "/root/netattack2" ]]
+		then
+			cd /root/netattack2
+			python2 netattack2.py
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_netattack2
+			else
+				continue
+			fi
+		fi
+		cd
+	elif [[ "$APPP" = "27" ]]
+	then
+		if [[ -f "/usr/bin/wifi-pumpkin" ]]
+		then
+			wifi-pumpkin
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_wifi_pumpkin
+			else
+				continue
+			fi
+		fi
+		cd
+	elif [[ "$APPP" = "28" ]]
+	then
+		if [[ -d "/root/Gloom-Framework" ]]
+		then
+			cd /root/Gloom-Framework
+			python2 gloom.py
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_gloom
+			else
+				continue
+			fi
+		fi
+		cd
+	elif [[ "$APPP" = "29" ]]
+	then
+		if [[ -f "/usr/bin/sechub" ]]
+		then
+			sechub
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_sechub
+			else
+				continue
+			fi
+		fi
+		cd
+	elif [[ "$APPP" = "30" ]]
+	then
+		if [[ -d "/root/SocialFish" ]]
+		then
+			cd /root/SocialFish
+			python SocialFish.py
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_socialfish
+			else
+				continue
+			fi
+		fi
+		cd
+	elif [[ "$APPP" = "31" ]]
+	then
+		if [[ -d "/root/HT-WPS-Breaker" ]]
+		then
+			cd /root/HT-WPS-Breaker
+			./HT-WB.sh
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_HT-WPS-Breaker
+			else
+				continue
+			fi
+		fi
+		cd
+	elif [[ "$APPP" = "7" ]]
+	then
+		if command -v usufy >/dev/null 2>&1 || command -v usufy.py >/dev/null 2>&1 || command -v osrf >/dev/null 2>&1 || command -v osrframework-cli >/dev/null 2>&1 || [[ -d "/root/osrframework" ]]
+		then
+			while true
+			do
+			printf '\033]2;OSRFCONSOLE\a'
+			clear
+			echo -e ""$YS" 1"$CE") usufy"
+			echo -e ""$YS" 2"$CE") mailfy"
+			echo -e ""$YS" 3"$CE") searchfy"
+			echo -e ""$YS" 4"$CE") domainfy"
+			echo -e ""$YS" 5"$CE") phonefy"
+			echo -e ""$YS" 6"$CE") entify"
+			echo -e ""$YS" b"$CE") Go back"
+			echo -e ""$YS"00"$CE") Main menu"
+		#	echo -e ""$YS" 0"$CE") EXIT"
+			echo -e "Choose: "
+			read -e OSFR
+			clear
+				if [[ "$OSFR" = "1" ]]
+				then
+					echo -e "Use: usufy.py -n name1 name2 -p twitter facebook"
+					usufy.py
+					exit
+				elif [[ "$OSFR" = "2" ]]
+				then
+					echo -e "Use: mailfy.py -n name1"
+					mailfy.py
+					exit
+				elif [[ "$OSFR" = "3" ]]
+				then
+					searchfy.py
+					exit
+				elif [[ "$OSFR" = "4" ]]
+				then
+					domainfy.py
+					exit
+				elif [[ "$OSFR" = "5" ]]
+				then
+					phonefy.py
+					exit
+				elif [[ "$OSFR" = "6" ]]
+				then
+				entify.py
+					exit
+				elif [[ "$OSFR" = "0" ]]
+				then
+					exit
+				elif [[ "$OSFR" = "00" ]]
+				then
+					exec bash "$0"
+				elif [[ "$OSFR" = "back" || "$OSFR" = "b" ]]
+				then
+					break
+				else 
+					echo -e "Wrong choice"
+					sleep 0.3
+					clear
+					exec bash "$0"
+				fi
+			done
+		else
+			echo -e "$TNI"
+			read INSTALL
+			if [[ "$INSTALL" = "install" ]]
+			then
+				install_osrframework
+			else
+				continue
+			fi
+		fi
+	elif [[ "$APPP" = "0" ]]
+	then
+		clear
+		exit
+	elif [[ "$APPP" = "00" ]]
+	then
+		clear
+		exec bash "$0"
+	elif [[ "$APPP" = "back" || "$APPP" = "b" ]]
+	then
+		break
+	fi
+	if [[ "$APPP" != "" ]]
+	then
+		echo -e "$PAKTGB"
+		$READAK
+	fi
+	done
 }
 function remote_access
 {
@@ -9044,6 +10182,23 @@ check_if_ks
 			chmod +x setup.sh && ./setup.sh	
 		fi
 	}
+	function install_angryip
+	{
+		cd
+		if [[ -f "/root/ipscan_*" ]]
+		then
+			echo -e "Removing old file"
+			sleep 2
+			rm -f /root/ipscan_*
+		fi
+		echo -e "Downloading angryipscanner"
+		sleep 2
+		wget https://github.com/angryip/ipscan/releases/download/2.1.7/ipscan_3.5.2_amd64.deb
+		echo -e "Installing..."
+		dpkg -i ipscan_3.5.2*
+		echo -e "Done"
+		sleep 1
+	}
 	function install_sniper
 	{
 		foldname="Sn1per"
@@ -9922,101 +11077,6 @@ EOF
 function install_operative
 {
         install_operative-framework
-}
-
-
-function install_angryipscanner
-{
-        echo -e ""$YS"Installing Angry IP Scanner..."$CE""
-
-        apt-get update
-        apt-get install -y curl wget ca-certificates python3 default-jre libswt-gtk-4-java libswt-gtk-4-jni dbus-x11 x11-xserver-utils || true
-        apt-get install -y libswt-cairo-gtk-4-jni || true
-        apt-get install -y libgtk-3-0t64 || apt-get install -y libgtk-3-0 || true
-
-        rm -f /tmp/ipscan.deb /tmp/ipscan_*.deb
-
-        DEB_URL="$(python3 - <<PYDL
-import json, urllib.request
-api = "https://api.github.com/repos/angryip/ipscan/releases/latest"
-try:
-    data = json.load(urllib.request.urlopen(api, timeout=20))
-    for asset in data.get("assets", []):
-        url = asset.get("browser_download_url", "")
-        if url.endswith("_all.deb"):
-            print(url)
-            raise SystemExit
-except Exception:
-    pass
-print("https://github.com/angryip/ipscan/releases/download/3.9.3/ipscan_3.9.3_all.deb")
-PYDL
-)"
-
-        echo -e ""$YS"Downloading Angry IP Scanner: $DEB_URL"$CE""
-        wget -O /tmp/ipscan.deb "$DEB_URL"
-
-        dpkg -i /tmp/ipscan.deb || apt-get -f install -y
-
-        cat > /usr/local/bin/ipscan <<'EOF'
-#!/usr/bin/env bash
-set -e
-
-export GDK_BACKEND=x11
-export SWT_GTK3=1
-export LD_LIBRARY_PATH="/usr/lib/jni:/usr/lib/aarch64-linux-gnu/jni:/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH:-}"
-
-IPSCAN_JAR="/usr/lib/ipscan/ipscan-any-3.9.3.jar"
-
-if [[ ! -f "$IPSCAN_JAR" ]]
-then
-    IPSCAN_JAR="$(find /usr/lib /usr/share /opt -type f -name "*.jar" 2>/dev/null | grep -Ei "ipscan|angry" | head -n 1)"
-fi
-
-SWT_JARS="$(find /usr/share/java -type f -iname "*swt*.jar" 2>/dev/null | tr "\n" ":")"
-JAVA_BIN="$(command -v java)"
-
-if [[ -z "$JAVA_BIN" ]]
-then
-    echo "[FAIL] java not found"
-    exit 1
-fi
-
-if [[ -z "$IPSCAN_JAR" || ! -f "$IPSCAN_JAR" ]]
-then
-    echo "[FAIL] ipscan jar not found"
-    exit 1
-fi
-
-if [[ -z "$SWT_JARS" ]]
-then
-    echo "[FAIL] SWT jars not found"
-    exit 1
-fi
-
-exec "$JAVA_BIN" \
---add-opens=java.base/java.net=ALL-UNNAMED \
--Djava.library.path="/usr/lib/jni:/usr/lib/aarch64-linux-gnu/jni:/usr/lib/aarch64-linux-gnu" \
--cp "$IPSCAN_JAR:$SWT_JARS:/usr/share/java/*" \
-net.azib.ipscan.Main "$@"
-EOF
-
-        chmod +x /usr/local/bin/ipscan
-        ln -sf /usr/local/bin/ipscan /usr/bin/ipscan
-
-        if command -v ipscan >/dev/null 2>&1
-        then
-                echo -e ""$GS"Angry IP Scanner installed successfully."$CE""
-                echo -e ""$YS"Run it with: ipscan"$CE""
-        else
-                echo -e ""$RS"Angry IP Scanner install failed."$CE""
-        fi
-
-        sleep 3
-}
-
-function install_angryip
-{
-        install_angryipscanner
 }
 
 
