@@ -5505,10 +5505,32 @@ function information_gathering
 					then
 						searchfy.py
 						exit
-					elif [[ "$OSFR" = "4" ]]
-					then
-						domainfy.py
-						exit
+                                  elif [[ "$OSFR" = "4" ]]
+                                  then
+                                          echo "Example: -n targetname"
+                                          echo "Or type only: targetname"
+                                          echo "Use root/domain name only, without .com"
+                                          echo -n "domainfy input: "
+                                          read -e -a OSR_ARGS
+
+                                          if [[ ${#OSR_ARGS[@]} -eq 0 ]]
+                                          then
+                                                  domainfy --help
+                                          elif [[ "${OSR_ARGS[0]}" == -* ]]
+                                          then
+                                                  domainfy "${OSR_ARGS[@]}"
+                                  echo ""
+                                  echo "Press Enter to return to OSRConsole menu..."
+                                  read -r
+
+                                          else
+                                                  domainfy -n "${OSR_ARGS[@]}"
+                                  echo ""
+                                  echo "Press Enter to return to OSRConsole menu..."
+                                  read -r
+
+                                          fi
+
 					elif [[ "$OSFR" = "5" ]]
 					then
 						phonefy.py
