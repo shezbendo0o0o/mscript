@@ -1,4 +1,4 @@
-## Welcome to the MOU script  v2.1.23
+## Welcome to the MOU script  v2.1.24
 <p align="center">
 <img src="https://i.imgur.com/QY1080b.png"/>
 <img src="https://i.imgur.com/7yxjAyt.png"/>
