@@ -5412,13 +5412,18 @@ function information_gathering
 		then
 			if [[ -d /opt/Infoga ]]
 			then
-				echo -e "Domain to search:"
-				read INFOTARG
-				echo -e "Data source(e.g. "$YS"all"$CE","$YS"google"$CE","$YS"bing"$CE","$YS"yahoo"$CE","$YS"pgp"$CE"): "
-				read INFOSOUR
-				clear
-				cd /opt/Infoga
-				infoga -t $INFOTARG -s $INFOSOUR 
+				echo -n "Domain to search: "
+				read -e INFOGA_DOMAIN
+				echo -n "Data source(e.g. all,google,bing,yahoo,pgp): "
+				read -e INFOGA_SOURCE
+				INFOGA_SOURCE="${INFOGA_SOURCE:-all}"
+				
+				if [[ -z "$INFOGA_DOMAIN" ]]
+				then
+				        infoga --help
+				else
+				        infoga "$INFOGA_DOMAIN" "$INFOGA_SOURCE"
+				fi
 				echo -e "$PAKTGB"
 				$READAK
 				cd
@@ -11001,12 +11006,23 @@ function install_infoga
 #!/usr/bin/env bash
 cd /opt/Infoga || exit 1
 
-if [[ -x /opt/infoga-venv/bin/python ]]
+# Smart simple mode:
+# infoga cisco.com all  ->  infoga.py --domain cisco.com --source all -v 3
+# infoga test@mail.com  ->  infoga.py --info test@mail.com -v 3
+if [[ $# -ge 1 && "$1" != -* ]]
 then
-        exec /opt/infoga-venv/bin/python infoga.py "$@"
-else
-        exec infoga "$@"
+        TARGET="$1"
+        SOURCE="${2:-all}"
+
+        if [[ "$TARGET" == *"@"* ]]
+        then
+                exec /opt/infoga-venv/bin/python infoga.py --info "$TARGET" -v 3
+        else
+                exec /opt/infoga-venv/bin/python infoga.py --domain "$TARGET" --source "$SOURCE" -v 3
+        fi
 fi
+
+exec /opt/infoga-venv/bin/python infoga.py "$@"
 EOF
 
         chmod -R a+rX /opt/Infoga /opt/infoga-venv 2>/dev/null || true
