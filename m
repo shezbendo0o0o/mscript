@@ -13035,7 +13035,7 @@ function install_howdoi
 	function install_koadic
 	{
 		foldname="koadic"
-		gitlink="https://github.com/zerosum0x0/koadic.git"
+		gitlink="https://github.com/offsecginger/koadic.git"
 		install_default
 		cloned=$?
 		if [[ "$cloned" == 1 ]]
