@@ -13032,18 +13032,105 @@ function install_howdoi
 		gitlink="https://github.com/chrizator/netattack2.git"
 		install_default
 	}
-	function install_koadic
-	{
-		foldname="koadic"
-		gitlink="https://github.com/offsecginger/koadic.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install -r requirements.txt
-			pip2.7 install -r requirements.txt
-		fi
-	}
+function install_koadic
+{
+        foldname="koadic"
+        gitlink="https://github.com/offsecginger/koadic.git"
+
+        install_default
+        cloned=$?
+
+        if [[ "$cloned" == 1 ]]
+        then
+                echo -e "${YS}Installing Koadic Python 3 environment...${CE}"
+
+                apt-get update
+
+                DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                        python3 \
+                        python3-pip \
+                        python3-venv \
+                        python3-dev \
+                        build-essential \
+                        libffi-dev \
+                        libssl-dev
+
+                if [[ ! -f requirements.txt ]]
+                then
+                        echo -e "${RS}requirements.txt was not found.${CE}"
+                        return 1
+                fi
+
+                awk '
+                BEGIN {
+                        IGNORECASE=1
+                }
+
+                /^[[:space:]]*pycrypto([<>=!~].*)?[[:space:]]*$/ {
+                        print "pycryptodome"
+                        next
+                }
+
+                {
+                        print
+                }
+                ' requirements.txt > requirements-python3.txt
+
+                rm -rf .venv
+
+                python3 -m venv .venv
+
+                .venv/bin/python -m pip install --upgrade \
+                        pip \
+                        setuptools \
+                        wheel
+
+                if ! .venv/bin/python -m pip install \
+                        --no-cache-dir \
+                        -r requirements-python3.txt
+                then
+                        echo -e "${RS}Koadic dependency installation failed.${CE}"
+                        return 1
+                fi
+
+                if [[ -f koadic && ! -f koadic.py ]]
+                then
+                        mv koadic koadic.py
+                fi
+
+                if [[ ! -f koadic.py ]]
+                then
+                        echo -e "${RS}Koadic launcher was not found.${CE}"
+                        return 1
+                fi
+
+                cat > koadic <<'KOADIC_RUNNER'
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+KOADIC_DIR="$(
+        cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+        pwd
+)"
+
+cd "$KOADIC_DIR"
+
+exec "$KOADIC_DIR/.venv/bin/python" \
+        "$KOADIC_DIR/koadic.py" "$@"
+KOADIC_RUNNER
+
+                chmod 755 koadic
+
+                if ./koadic --help >/dev/null 2>&1
+                then
+                        echo -e "${GNS}Koadic installed successfully using Python 3.${CE}"
+                else
+                        echo -e "${YS}Koadic was installed, but its startup test returned an error.${CE}"
+                fi
+        fi
+}
+
 	function install_empire
 	{
 		foldname="Empire"
