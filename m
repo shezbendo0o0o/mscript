@@ -7,7 +7,7 @@ IAGREE_FILE="${MSCRIPT_STATE_DIR}/IAGREE.txt"
 
 
 # set -x
-VERSION=2.1.28
+VERSION=2.1.29
 #Number of tools with keyboard shortcut support
 HOWMANYTOOLS=53
 BACKL="0"
@@ -13253,17 +13253,18 @@ KOADIC_RUNNER
 		gitlink="https://github.com/D35m0nd142/LFISuite.git"
 		install_default
 	}
-	function install_unibyav
-	{
-		foldname="UniByAv"
-		gitlink="https://github.com/Mr-Un1k0d3r/UniByAv.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			apt-get install -y mingw-w64
-		fi
-	}
+function install_unibyav
+{
+        clear
+        echo -e "${RS}UniByAv installation is disabled in this build.${CE}"
+        echo -e ""
+        echo -e "The configured upstream repository is unavailable,"
+        echo -e "and this component is not maintained by MOU Script."
+        echo -e ""
+        echo -e "$PAKTGB"
+        $READAK
+}
+
 	function install_demiguise
 	{
 		foldname="demiguise"
