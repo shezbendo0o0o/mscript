@@ -7,7 +7,7 @@ IAGREE_FILE="${MSCRIPT_STATE_DIR}/IAGREE.txt"
 
 
 # set -x
-VERSION=2.1.24
+VERSION=2.1.25
 #Number of tools with keyboard shortcut support
 HOWMANYTOOLS=53
 BACKL="0"
@@ -278,78 +278,2085 @@ function check_wlans
 	WLANMCHECKING=$(ifconfig | grep "$WLANNM" )
 	#~ WLANMCHECKING=$(ifconfig | awk -v c1="$CC" '$0 ~ c1 {print}')
 }
+
+function mou_wireless_cards
+{
+    {
+        iw dev 2>/dev/null | awk '/Interface/ {print $2}'
+        for i in /sys/class/net/*
+        do
+            [ -d "$i/wireless" ] && basename "$i"
+        done 2>/dev/null
+    } | sort -u
+}
+
+
+function mou_monitor_cards
+{
+    iw dev 2>/dev/null | awk '
+        /Interface/ {iface=$2}
+        /type monitor/ {print iface}
+    '
+}
+
+
+function mou_show_wireless_cards
+{
+    clear
+    echo -e ""$YS"Detected wireless cards:"$CE""
+
+    cards="$(mou_wireless_cards)"
+
+    if [ -z "$cards" ]
+    then
+        echo -e ""$RS"No wireless cards detected."$CE""
+        echo -e "$PAKTC"
+        $READAK
+        return 1
+    fi
+
+    n=1
+    for iface in $cards
+    do
+        admin_state="$(mou_wireless_admin_state "$iface")"
+        oper_state="$(cat /sys/class/net/$iface/operstate 2>/dev/null || echo unknown)"
+        mac="$(cat /sys/class/net/$iface/address 2>/dev/null || echo unknown)"
+        driver="$(basename "$(readlink -f /sys/class/net/$iface/device/driver 2>/dev/null)" 2>/dev/null || echo unknown)"
+
+        line_color="$RS"
+        [ "$admin_state" = "enabled" ] && line_color="$GS"
+
+        printf "%b%s%b) %b%s%b  admin=%b%s%b  state=%s  mac=%s  driver=%s\n" \
+            "$YS" "$n" "$CE" \
+            "$line_color" "$iface" "$CE" \
+            "$line_color" "$admin_state" "$CE" \
+            "$oper_state" "$mac" "$driver"
+
+        n=$((n+1))
+    done
+
+    mons="$(mou_monitor_cards)"
+    if [ -n "$mons" ]
+    then
+        echo
+        echo -e ""$YS"Monitor interfaces:"$CE""
+        for mon in $mons
+        do
+            printf "%b* %s%b\n" "$GS" "$mon" "$CE"
+        done
+    fi
+}
+
+
+function mou_pick_wireless_card
+{
+    MOU_PICKED_WIFI=""
+
+    cards="$(mou_wireless_cards)"
+
+    if [ -z "$cards" ]
+    then
+        echo -e ""$RS"No wireless cards detected."$CE""
+        return 1
+    fi
+
+    clear
+    echo -e ""$YS"Choose wireless card for monitor mode:"$CE""
+
+    n=1
+    for iface in $cards
+    do
+        admin_state="$(mou_wireless_admin_state "$iface")"
+        oper_state="$(cat /sys/class/net/$iface/operstate 2>/dev/null || echo unknown)"
+        driver="$(basename "$(readlink -f /sys/class/net/$iface/device/driver 2>/dev/null)" 2>/dev/null || echo unknown)"
+        printf "%b%s%b) %s  admin=%s  state=%s  driver=%s\n" "$YS" "$n" "$CE" "$iface" "$admin_state" "$oper_state" "$driver"
+        n=$((n+1))
+    done
+
+    printf "%bb%b) Back\n" "$YS" "$CE"
+    echo -n "Choose: "
+    read -r pick
+
+    [ "$pick" = "b" ] && return 1
+    [ -z "$pick" ] && {
+        echo -e ""$RS"Invalid selection."$CE""
+        return 1
+    }
+
+    n=1
+    for iface in $cards
+    do
+        if [ "$pick" = "$n" ] || [ "$pick" = "$iface" ]
+        then
+            MOU_PICKED_WIFI="$iface"
+            return 0
+        fi
+        n=$((n+1))
+    done
+
+    echo -e ""$RS"Invalid selection."$CE""
+    return 1
+}
+
+
+
+function mou_driver_name
+{
+    iface="$1"
+    basename "$(readlink -f /sys/class/net/$iface/device/driver 2>/dev/null)" 2>/dev/null || echo unknown
+}
+
+function mou_monitor_practical_guard
+{
+    iface="$1"
+    driver="$(mou_driver_name "$iface")"
+
+    if [ "$driver" = "brcmfmac" ]
+    then
+        echo -e ""$RS"$iface uses brcmfmac Broadcom driver."$CE""
+        echo -e ""$YS"iw list may show monitor support, but this firmware refused real monitor mode:"$CE""
+        echo -e ""$RS"Operation not supported (-95)"$CE""
+        echo
+        echo -e ""$YS"Use an external USB Wi-Fi adapter that supports monitor mode."$CE""
+        echo -e ""$YS"Good chipsets: Atheros AR9271, Ralink RT5370, Realtek RTL8812AU/RTL8812BU."$CE""
+        ip link set "$iface" up >/dev/null 2>&1 || true
+        service NetworkManager restart >/dev/null 2>&1 || true
+        systemctl restart NetworkManager >/dev/null 2>&1 || true
+        echo -e "$PAKTC"
+        $READAK
+        return 1
+    fi
+
+    return 0
+}
+
+function mou_enable_monitor_picker
+{
+    mou_pick_wireless_card || {
+        echo -e "$PAKTC"
+        $READAK
+        return 1
+    }
+
+    iface="$MOU_PICKED_WIFI"
+
+    if [ -z "$iface" ]
+    then
+        echo -e ""$RS"No wireless card selected."$CE""
+        echo -e "$PAKTC"
+        $READAK
+        return 1
+    fi
+
+    echo -e "Enabling monitor mode on "$YS"$iface"$CE"..."
+
+    mou_monitor_practical_guard "$iface" || return 1
+
+    rfkill unblock wifi >/dev/null 2>&1 || true
+    rfkill unblock all >/dev/null 2>&1 || true
+
+    echo -e ""$YS"Killing services..."$CE""
+    airmon-ng check kill >/dev/null 2>&1 || true
+    service NetworkManager stop >/dev/null 2>&1 || true
+    systemctl stop NetworkManager >/dev/null 2>&1 || true
+
+    echo -e ""$YS"Trying direct iw monitor mode on $iface..."$CE""
+
+    ip link set "$iface" down >/dev/null 2>&1 || true
+
+    if iw dev "$iface" set type monitor >/dev/null 2>&1
+    then
+        ip link set "$iface" up >/dev/null 2>&1 || true
+
+        mkdir -p "${MSCRIPT_STATE_DIR:-/bin/mscript}"
+        echo "$iface" > "${MSCRIPT_STATE_DIR:-/bin/mscript}/wlan.txt"
+        echo "$iface" > "${MSCRIPT_STATE_DIR:-/bin/mscript}/wlanmon.txt"
+
+        WLANN="$iface"
+        WLANNM="$iface"
+
+        echo -e ""$GS"Done."$CE""
+        echo -e "Monitor interface: "$YS"$iface"$CE""
+        iw dev "$iface" info 2>/dev/null | grep -E "Interface|type|channel" || true
+
+        echo -e "$PAKTC"
+        $READAK
+        return 0
+    fi
+
+    echo -e ""$RS"Direct iw failed."$CE""
+    echo -e ""$YS"Trying airmon-ng fallback..."$CE""
+
+    ip link set "$iface" up >/dev/null 2>&1 || true
+
+    before="$(mou_monitor_cards)"
+
+    if airmon-ng start "$iface"
+    then
+        sleep 1
+
+        after="$(mou_monitor_cards)"
+        mon=""
+
+        for m in $after
+        do
+            echo "$before" | grep -qx "$m" || {
+                mon="$m"
+                break
+            }
+        done
+
+        if [ -z "$mon" ]
+        then
+            for m in $after
+            do
+                case "$m" in
+                    "$iface"mon|*mon|mon*) mon="$m"; break ;;
+                esac
+            done
+        fi
+
+        if [ -z "$mon" ] && iw dev "$iface" info 2>/dev/null | grep -q "type monitor"
+        then
+            mon="$iface"
+        fi
+
+        if [ -n "$mon" ]
+        then
+            mkdir -p "${MSCRIPT_STATE_DIR:-/bin/mscript}"
+            echo "$iface" > "${MSCRIPT_STATE_DIR:-/bin/mscript}/wlan.txt"
+            echo "$mon" > "${MSCRIPT_STATE_DIR:-/bin/mscript}/wlanmon.txt"
+
+            WLANN="$iface"
+            WLANNM="$mon"
+
+            ip link set "$mon" up >/dev/null 2>&1 || true
+
+            echo -e ""$GS"Done."$CE""
+            echo -e "Managed interface: "$YS"$iface"$CE""
+            echo -e "Monitor interface: "$YS"$mon"$CE""
+
+            echo -e "$PAKTC"
+            $READAK
+            return 0
+        fi
+    fi
+
+    echo -e ""$RS"Error starting monitor mode on $iface."$CE""
+    echo -e ""$YS"Restoring $iface to managed/up mode..."$CE""
+
+    ip link set "$iface" down >/dev/null 2>&1 || true
+    iw dev "$iface" set type managed >/dev/null 2>&1 || true
+    ip link set "$iface" up >/dev/null 2>&1 || true
+
+    service NetworkManager restart >/dev/null 2>&1 || true
+    systemctl restart NetworkManager >/dev/null 2>&1 || true
+
+    echo -e "$PAKTC"
+    $READAK
+    return 1
+}
+
+
+
+
+
+function mou_disable_monitor_auto
+{
+    mons="$(mou_monitor_cards)"
+
+    if [ -z "$mons" ] && [ -n "$WLANNM" ]
+    then
+        mons="$WLANNM"
+    fi
+
+    if [ -z "$mons" ]
+    then
+        echo -e ""$YS"No monitor interface detected. Restoring wireless services..."$CE""
+        service NetworkManager restart >/dev/null 2>&1 || true
+        systemctl restart NetworkManager >/dev/null 2>&1 || true
+        echo -e "$PAKTC"
+        $READAK
+        return 0
+    fi
+
+    for mon in $mons
+    do
+        echo -e "Stopping monitor mode on "$YS"$mon"$CE"..."
+
+        ip link set "$mon" down >/dev/null 2>&1 || true
+        iw dev "$mon" set type managed >/dev/null 2>&1 || airmon-ng stop "$mon" >/dev/null 2>&1 || true
+        ip link set "$mon" up >/dev/null 2>&1 || true
+    done
+
+    service NetworkManager restart >/dev/null 2>&1 || true
+    systemctl restart NetworkManager >/dev/null 2>&1 || true
+
+    echo -e ""$GS"Done."$CE""
+    echo -e "$PAKTC"
+    $READAK
+}
+
+
+
+function mou_wireless_admin_state
+{
+    iface="$1"
+
+    if [ -z "$iface" ] || [ ! -d "/sys/class/net/$iface" ]
+    then
+        echo "missing"
+        return
+    fi
+
+    if ip link show "$iface" 2>/dev/null | grep -q "<[^>]*UP"
+    then
+        echo "enabled"
+    else
+        echo "disabled"
+    fi
+}
+
+function mou_primary_wireless_card
+{
+    mou_wireless_cards | head -n 1
+}
+
+function mou_manage_wireless_cards
+{
+    while true
+    do
+        mou_show_wireless_cards
+
+        echo
+        echo -e ""$YS"Choose card number/name to enable or disable."$CE""
+        echo -e ""$YS"b"$CE") Back"
+        echo -n "Choose: "
+        read -r pick
+
+        [ "$pick" = "b" ] && break
+        [ "$pick" = "0" ] && break
+
+        cards="$(mou_wireless_cards)"
+        selected=""
+
+        n=1
+        for iface in $cards
+        do
+            if [ "$pick" = "$n" ] || [ "$pick" = "$iface" ]
+            then
+                selected="$iface"
+                break
+            fi
+            n=$((n+1))
+        done
+
+        if [ -z "$selected" ]
+        then
+            echo -e ""$RS"Invalid selection."$CE""
+            sleep 1
+            continue
+        fi
+
+        current_state="$(mou_wireless_admin_state "$selected")"
+
+        echo
+        echo -e "Selected: "$YS"$selected"$CE"  current: "$YS"$current_state"$CE""
+        echo -e ""$YS"e"$CE") Enable"
+        echo -e ""$YS"d"$CE") Disable"
+        echo -e ""$YS"b"$CE") Back"
+        echo -n "Choose action: "
+        read -r action
+
+        case "$action" in
+            e|E)
+                rfkill unblock wifi >/dev/null 2>&1 || true
+                rfkill unblock all >/dev/null 2>&1 || true
+                ip link set "$selected" up >/dev/null 2>&1 || ifconfig "$selected" up >/dev/null 2>&1
+                if [ "$?" = "0" ]
+                then
+                    mkdir -p "${MSCRIPT_STATE_DIR:-/bin/mscript}"
+                    echo "$selected" > "${MSCRIPT_STATE_DIR:-/bin/mscript}/wlan.txt"
+                    WLANN="$selected"
+                    echo -e ""$GS"$selected enabled."$CE""
+                else
+                    echo -e ""$RS"Could not enable $selected."$CE""
+                fi
+                ;;
+            d|D)
+                ip link set "$selected" down >/dev/null 2>&1 || ifconfig "$selected" down >/dev/null 2>&1
+                if [ "$?" = "0" ]
+                then
+                    echo -e ""$RS"$selected disabled."$CE""
+                else
+                    echo -e ""$RS"Could not disable $selected."$CE""
+                fi
+                ;;
+            b|B)
+                ;;
+            *)
+                echo -e ""$RS"Invalid action."$CE""
+                ;;
+        esac
+
+        echo -e "$PAKTC"
+        $READAK
+    done
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mou_anonym8_state_file
+{
+    echo "${MSCRIPT_STATE_DIR:-/bin/mscript}/anonym8_state"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mou_anonsurf_state_file
+{
+    echo "${MSCRIPT_STATE_DIR:-/bin/mscript}/anonsurf_state"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mou_restart_anonsurf_action
+{
+    clear
+    echo -e "Restarting anonsurf..."
+    echo
+
+    out="$(anonsurf restart 2>&1 || /usr/bin/anonsurf restart 2>&1 || true)"
+    printf "%s\n" "$out"
+
+    mou_set_anonsurf_enabled
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mou_write_anonsurf_state_all
+{
+    state="$1"
+
+    mkdir -p /bin/mscript /usr/bin/mscript /root/mscript 2>/dev/null || true
+
+    echo "$state" > /bin/mscript/anonsurf_state 2>/dev/null || true
+    echo "$state" > /usr/bin/mscript/anonsurf_state 2>/dev/null || true
+    echo "$state" > /root/mscript/anonsurf_state 2>/dev/null || true
+
+    mkdir -p "${MSCRIPT_STATE_DIR:-/bin/mscript}" 2>/dev/null || true
+    echo "$state" > "${MSCRIPT_STATE_DIR:-/bin/mscript}/anonsurf_state" 2>/dev/null || true
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mou_show_bandwidth_inline
+{
+    tmp1="$(mktemp)"
+    tmp2="$(mktemp)"
+
+    cleanup_bandwidth_monitor()
+    {
+        rm -f "$tmp1" "$tmp2" 2>/dev/null || true
+        tput cnorm 2>/dev/null || true
+        stty echo 2>/dev/null || true
+    }
+
+    trap 'cleanup_bandwidth_monitor; return 0 2>/dev/null || exit 0' INT TERM
+
+    clear
+    tput civis 2>/dev/null || true
+
+    awk -F'[: ]+' 'NR>2 {print $2, $3, $11}' /proc/net/dev > "$tmp1"
+
+    while true
+    do
+        read -rsn1 -t 1 key
+        if [ "$key" = "q" ] || [ "$key" = "Q" ]
+        then
+            break
+        fi
+
+        awk -F'[: ]+' 'NR>2 {print $2, $3, $11}' /proc/net/dev > "$tmp2"
+
+        printf "\033[1;1H"
+        echo -e "$YS━━━━━━━━━━━━━━━━━━ BANDWIDTH MONITOR ━━━━━━━━━━━━━━━━━━$CE"
+        echo -e "Press "$YS"q"$CE" to quit."
+        echo
+        printf "%-12s %-15s %-15s\n" "Interface" "Download" "Upload"
+        printf "%-12s %-15s %-15s\n" "---------" "--------" "------"
+
+        awk '
+            NR==FNR {
+                rx[$1]=$2
+                tx[$1]=$3
+                next
+            }
+
+            $1!="lo" {
+                drx=($2-rx[$1])/1024
+                dtx=($3-tx[$1])/1024
+
+                if (drx < 0) drx=0
+                if (dtx < 0) dtx=0
+
+                printf "%-12s %-15s %-15s\n", $1, int(drx)" KB/s", int(dtx)" KB/s"
+            }
+        ' "$tmp1" "$tmp2"
+
+        echo
+        echo "Last update: $(date +%H:%M:%S)"
+        printf "\033[J"
+
+        mv "$tmp2" "$tmp1"
+    done
+
+    cleanup_bandwidth_monitor
+    trap - INT TERM
+
+    clear
+}
+
+
+
+
+function mou_speedtest_inline
+{
+    clear
+    echo -e "$YS━━━━━━━━━━━━━━━━━━━━ SPEED TEST ━━━━━━━━━━━━━━━━━━━━$CE"
+    echo
+
+    if command -v speedtest >/dev/null 2>&1
+    then
+        echo -e ""$YS"Using Ookla speedtest..."$CE""
+        echo
+
+        timeout 120 speedtest --accept-license --accept-gdpr
+        code="$?"
+
+        echo
+        if [ "$code" != "0" ]
+        then
+            echo -e ""$RS"Speedtest failed. Exit code: $code"$CE""
+        fi
+
+    elif command -v speedtest-cli >/dev/null 2>&1
+    then
+        echo -e ""$YS"Using speedtest-cli with --secure..."$CE""
+        echo
+
+        timeout 120 speedtest-cli --secure --simple
+        code="$?"
+
+        if [ "$code" != "0" ]
+        then
+            echo
+            echo -e ""$YS"Simple mode failed. Trying full mode..."$CE""
+            echo
+            timeout 120 speedtest-cli --secure
+            code="$?"
+        fi
+
+        echo
+        if [ "$code" != "0" ]
+        then
+            echo -e ""$RS"speedtest-cli failed. Exit code: $code"$CE""
+            echo -e ""$YS"Tip: old speedtest-cli often breaks at 'Retrieving speedtest.net configuration'."$CE""
+            echo -e ""$YS"Install the official Ookla speedtest package if this keeps failing."$CE""
+        fi
+
+    else
+        echo -e ""$RS"No speedtest tool found."$CE""
+        echo
+        echo -e ""$YS"Install one of these:"$CE""
+        echo "sudo apt install speedtest-cli"
+        echo
+        echo "or install official Ookla speedtest."
+    fi
+
+    echo
+    echo -e "$PAKTC"
+    $READAK
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mou_write_state_all
+{
+    name="$1"
+    state="$2"
+
+    mkdir -p /bin/mscript /usr/bin/mscript /root/mscript 2>/dev/null || true
+    echo "$state" > "/bin/mscript/${name}_state" 2>/dev/null || true
+    echo "$state" > "/usr/bin/mscript/${name}_state" 2>/dev/null || true
+    echo "$state" > "/root/mscript/${name}_state" 2>/dev/null || true
+
+    mkdir -p "${MSCRIPT_STATE_DIR:-/bin/mscript}" 2>/dev/null || true
+    echo "$state" > "${MSCRIPT_STATE_DIR:-/bin/mscript}/${name}_state" 2>/dev/null || true
+}
+
+function mou_read_state_all
+{
+    name="$1"
+
+    for state_file in \
+        "${MSCRIPT_STATE_DIR:-/bin/mscript}/${name}_state" \
+        "/bin/mscript/${name}_state" \
+        "/usr/bin/mscript/${name}_state" \
+        "/root/mscript/${name}_state"
+    do
+        if [ -f "$state_file" ]
+        then
+            state="$(cat "$state_file" 2>/dev/null)"
+            case "$state" in
+                enabled|disabled)
+                    echo "$state"
+                    return 0
+                    ;;
+            esac
+        fi
+    done
+
+    return 1
+}
+
+function mou_set_anonym8_enabled
+{
+    mou_write_state_all anonym8 enabled
+}
+
+function mou_set_anonym8_disabled
+{
+    mou_write_state_all anonym8 disabled
+}
+
+function mou_set_anonsurf_enabled
+{
+    mou_write_state_all anonsurf enabled
+}
+
+function mou_set_anonsurf_disabled
+{
+    mou_write_state_all anonsurf disabled
+}
+
+function mou_anonym8_status
+{
+    if [ ! -f /usr/bin/anonym8 ] && ! command -v anonym8 >/dev/null 2>&1
+    then
+        echo "missing"
+        return
+    fi
+
+    state="$(mou_read_state_all anonym8 2>/dev/null)" && {
+        echo "$state"
+        return
+    }
+
+    echo "disabled"
+}
+
+function mou_anonsurf_status
+{
+    if [ ! -f /usr/bin/anonsurf ] && ! command -v anonsurf >/dev/null 2>&1
+    then
+        echo "missing"
+        return
+    fi
+
+    state="$(mou_read_state_all anonsurf 2>/dev/null)" && {
+        echo "$state"
+        return
+    }
+
+    echo "disabled"
+}
+
+
+# ============================================================
+# Guarded Anonym8 networking
+# ============================================================
+
+function mou_anonym8_restore_dir
+{
+    echo "${MSCRIPT_STATE_DIR:-/bin/mscript}/anonym8_restore"
+}
+
+function mou_anonym8_save_service_state
+{
+    local service="$1"
+    local output="$2"
+
+    if systemctl is-active --quiet "$service" 2>/dev/null
+    then
+        echo "active" > "$output"
+    else
+        echo "inactive" > "$output"
+    fi
+}
+
+function mou_anonym8_backup_network_state
+{
+    local dir
+    dir="$(mou_anonym8_restore_dir)"
+
+    # Do not overwrite the original backup during an active session.
+    if [ -f "$dir/active" ]
+    then
+        return 0
+    fi
+
+    rm -rf "$dir"
+    mkdir -p "$dir" || return 1
+    chmod 700 "$dir"
+
+    # Preserve whether resolv.conf was originally a symlink.
+    if [ -L /etc/resolv.conf ]
+    then
+        readlink /etc/resolv.conf > "$dir/resolv.symlink"
+    fi
+
+    # Avoid saving known broken Anonym8 DNS as the normal DNS backup.
+    if grep -qE \
+       'nameserver[[:space:]]+(213\.73\.91\.35|87\.118\.100\.175)' \
+       /etc/resolv.conf 2>/dev/null
+    then
+        cat > "$dir/resolv.conf" <<'DNS_BACKUP'
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+options timeout:2 attempts:2
+DNS_BACKUP
+    else
+        cp -Lf /etc/resolv.conf "$dir/resolv.conf" 2>/dev/null || {
+            cat > "$dir/resolv.conf" <<'DNS_BACKUP'
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+options timeout:2 attempts:2
+DNS_BACKUP
+        }
+    fi
+
+    iptables-save > "$dir/iptables.v4" 2>/dev/null || true
+    ip6tables-save > "$dir/iptables.v6" 2>/dev/null || true
+
+    sysctl -n net.ipv4.ip_forward \
+        > "$dir/ip_forward" 2>/dev/null || echo 0 > "$dir/ip_forward"
+
+    sysctl -n net.ipv6.conf.all.disable_ipv6 \
+        > "$dir/ipv6_all" 2>/dev/null || echo 0 > "$dir/ipv6_all"
+
+    sysctl -n net.ipv6.conf.default.disable_ipv6 \
+        > "$dir/ipv6_default" 2>/dev/null || echo 0 > "$dir/ipv6_default"
+
+    mou_anonym8_save_service_state \
+        NetworkManager "$dir/NetworkManager.state"
+
+    mou_anonym8_save_service_state \
+        dnsmasq "$dir/dnsmasq.state"
+
+    mou_anonym8_save_service_state \
+        tor "$dir/tor.state"
+
+    mou_anonym8_save_service_state \
+        tor@default "$dir/tor-default.state"
+
+    chmod 600 "$dir"/* 2>/dev/null || true
+}
+
+function mou_anonym8_force_tor_dns
+{
+    chattr -i /etc/resolv.conf 2>/dev/null || true
+    rm -f /etc/resolv.conf
+
+    # No public fallback DNS while Anonym8 is active.
+    cat > /etc/resolv.conf <<'TOR_DNS'
+nameserver 127.0.0.1
+options timeout:2 attempts:2
+TOR_DNS
+}
+
+function mou_anonym8_block_ipv6
+{
+    # Prevent IPv6 from bypassing IPv4 Tor redirection.
+    sysctl -w net.ipv6.conf.all.disable_ipv6=1 \
+        >/dev/null 2>&1 || true
+
+    sysctl -w net.ipv6.conf.default.disable_ipv6=1 \
+        >/dev/null 2>&1 || true
+}
+
+function mou_anonym8_verify_tor
+{
+    local json=""
+    local tor_ip=""
+    local direct_ip=""
+    local direct_json=""
+    local test_user=""
+    local i=""
+
+    command -v curl >/dev/null 2>&1 || {
+        echo -e "${RS}Curl is required for Tor verification.${CE}"
+        return 1
+    }
+
+    test_user="${SUDO_USER:-}"
+
+    if [ -z "$test_user" ] ||
+       [ "$test_user" = "root" ] ||
+       ! id "$test_user" >/dev/null 2>&1
+    then
+        test_user="$(logname 2>/dev/null || true)"
+    fi
+
+    if [ -z "$test_user" ] ||
+       [ "$test_user" = "root" ] ||
+       ! id "$test_user" >/dev/null 2>&1
+    then
+        test_user="$(
+            awk -F: '
+                $3 >= 1000 && $3 < 65534 {
+                    print $1
+                    exit
+                }
+            ' /etc/passwd
+        )"
+    fi
+
+    if [ -z "$test_user" ] ||
+       [ "$test_user" = "root" ] ||
+       ! id "$test_user" >/dev/null 2>&1
+    then
+        echo -e "${RS}Could not identify a non-root user for leak testing.${CE}"
+        return 1
+    fi
+
+    echo -e "${YS}Waiting for Tor to become ready...${CE}"
+
+    for i in $(seq 1 45)
+    do
+        if ss -lnt 2>/dev/null |
+           grep -qE '127\.0\.0\.1:9050[[:space:]]' &&
+           ss -lnt 2>/dev/null |
+           grep -qE '127\.0\.0\.1:9040[[:space:]]' &&
+           ss -lun 2>/dev/null |
+           grep -qE '127\.0\.0\.1:53[[:space:]]'
+        then
+            break
+        fi
+
+        sleep 1
+    done
+
+    ss -lnt 2>/dev/null |
+    grep -qE '127\.0\.0\.1:9050[[:space:]]' || {
+        echo -e "${RS}Tor SOCKS port 9050 is not listening.${CE}"
+        return 1
+    }
+
+    ss -lnt 2>/dev/null |
+    grep -qE '127\.0\.0\.1:9040[[:space:]]' || {
+        echo -e "${RS}Tor transparent port 9040 is not listening.${CE}"
+        return 1
+    }
+
+    ss -lun 2>/dev/null |
+    grep -qE '127\.0\.0\.1:53[[:space:]]' || {
+        echo -e "${RS}Tor DNS port 127.0.0.1:53 is not listening.${CE}"
+        return 1
+    }
+
+    iptables-save 2>/dev/null |
+    grep -qE '9040|--to-ports[[:space:]]+9040' || {
+        echo -e "${RS}No transparent Tor firewall rule was found.${CE}"
+        return 1
+    }
+
+    if awk '
+        /^[[:space:]]*nameserver/ {
+            print $2
+        }
+    ' /etc/resolv.conf |
+       grep -Ev '^(127\.0\.0\.1|::1)$' |
+       grep -q .
+    then
+        echo -e "${RS}Public DNS is configured while Anonym8 is active.${CE}"
+        echo -e "${RS}Possible DNS leak.${CE}"
+        return 1
+    fi
+
+    timeout 20 getent ahostsv4 check.torproject.org \
+        >/dev/null 2>&1 || {
+        echo -e "${RS}Tor DNS resolution failed.${CE}"
+        return 1
+    }
+
+    echo -e "${YS}Testing SOCKS connection through Tor...${CE}"
+
+    json="$(
+        sudo -u "$test_user" \
+        env \
+            -u http_proxy -u https_proxy -u all_proxy \
+            -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+        curl -4fsS \
+            --socks5-hostname 127.0.0.1:9050 \
+            --max-time 35 \
+            https://check.torproject.org/api/ip \
+            2>/dev/null
+    )"
+
+    if printf '%s' "$json" |
+       grep -Eq '"IsTor"[[:space:]]*:[[:space:]]*true'
+    then
+        echo -e "${GS}Tor Project confirmed the SOCKS connection.${CE}"
+
+    elif printf '%s' "$json" |
+         grep -Eq '"IsTor"[[:space:]]*:[[:space:]]*false'
+    then
+        echo -e "${RS}Tor Project explicitly reported that this is not Tor.${CE}"
+        return 1
+
+    else
+        echo -e "${YS}Tor check API returned no usable confirmation.${CE}"
+        echo -e "${YS}Continuing with SOCKS, IP, DNS, firewall and IPv6 checks.${CE}"
+
+        if [ -n "$json" ]
+        then
+            echo -e "${YS}Tor check response:${CE}"
+            printf '%s\n' "$json" | head -c 500
+            echo
+        fi
+    fi
+
+    tor_ip="$(
+        sudo -u "$test_user" \
+        env \
+            -u http_proxy -u https_proxy -u all_proxy \
+            -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+        curl -4fsS \
+            --socks5-hostname 127.0.0.1:9050 \
+            --max-time 30 \
+            https://api.ipify.org \
+            2>/dev/null
+    )"
+
+    [ -n "$tor_ip" ] || {
+        echo -e "${RS}Could not obtain the Tor exit IP.${CE}"
+        return 1
+    }
+
+    echo -e "${YS}Testing transparently routed traffic as user: $test_user${CE}"
+
+    # This request does not specify a SOCKS proxy. It must be captured
+    # by Anonym8's transparent-routing firewall rules.
+    direct_json="$(
+        sudo -u "$test_user" \
+        env \
+            -u http_proxy -u https_proxy -u all_proxy \
+            -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+        curl -4fsS \
+            --max-time 35 \
+            https://check.torproject.org/api/ip \
+            2>/dev/null
+    )"
+
+    if printf '%s' "$direct_json" |
+       grep -Eq '"IsTor"[[:space:]]*:[[:space:]]*true'
+    then
+        echo -e "${GS}Transparent traffic was confirmed as Tor.${CE}"
+
+    elif printf '%s' "$direct_json" |
+         grep -Eq '"IsTor"[[:space:]]*:[[:space:]]*false'
+    then
+        echo -e "${RS}IPv4 leak detected.${CE}"
+        echo -e "${RS}Ordinary traffic was explicitly reported as non-Tor.${CE}"
+        return 1
+
+    else
+        echo -e "${RS}Could not verify ordinary traffic through Tor.${CE}"
+        echo -e "${RS}Failing closed and restoring normal networking.${CE}"
+        return 1
+    fi
+
+    # Obtain the transparent route's exit IP for display only.
+    # It is allowed to differ from the SOCKS exit because stream
+    # isolation may assign a separate Tor circuit.
+    direct_ip="$(
+        sudo -u "$test_user" \
+        env \
+            -u http_proxy -u https_proxy -u all_proxy \
+            -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+        curl -4fsS \
+            --max-time 25 \
+            https://api.ipify.org \
+            2>/dev/null
+    )"
+
+    if sudo -u "$test_user" \
+       env \
+           -u http_proxy -u https_proxy -u all_proxy \
+           -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+       curl -6fsS \
+           --max-time 8 \
+           https://api64.ipify.org \
+           >/dev/null 2>&1
+    then
+        echo -e "${RS}IPv6 remains reachable and could bypass Tor.${CE}"
+        return 1
+    fi
+
+    echo
+    echo -e "${GS}Tor routing verified successfully.${CE}"
+    echo -e "${GS}Tor exit IP: $tor_ip${CE}"
+
+    echo -e "${GS}SOCKS Tor exit IP: $tor_ip${CE}"
+
+    if [ -n "$direct_ip" ]
+    then
+        echo -e "${GS}Transparent Tor exit IP: $direct_ip${CE}"
+    fi
+
+    echo -e "${GS}Ordinary user traffic is routed through Tor.${CE}"
+
+    return 0
+}
+
+function mou_anonym8_restore_network_state
+{
+    local dir
+    local target
+    local value
+
+    dir="$(mou_anonym8_restore_dir)"
+
+    echo -e "${YS}Restoring firewall, DNS and network state...$CE"
+
+    if [ -s "$dir/iptables.v4" ]
+    then
+        iptables-restore < "$dir/iptables.v4" 2>/dev/null || true
+    fi
+
+    if [ -s "$dir/iptables.v6" ]
+    then
+        ip6tables-restore < "$dir/iptables.v6" 2>/dev/null || true
+    fi
+
+    if [ -s "$dir/ip_forward" ]
+    then
+        value="$(cat "$dir/ip_forward")"
+        sysctl -w net.ipv4.ip_forward="$value" \
+            >/dev/null 2>&1 || true
+    fi
+
+    if [ -s "$dir/ipv6_all" ]
+    then
+        value="$(cat "$dir/ipv6_all")"
+        sysctl -w net.ipv6.conf.all.disable_ipv6="$value" \
+            >/dev/null 2>&1 || true
+    fi
+
+    if [ -s "$dir/ipv6_default" ]
+    then
+        value="$(cat "$dir/ipv6_default")"
+        sysctl -w net.ipv6.conf.default.disable_ipv6="$value" \
+            >/dev/null 2>&1 || true
+    fi
+
+    if [ "$(cat "$dir/NetworkManager.state" 2>/dev/null)" = "active" ]
+    then
+        systemctl restart NetworkManager 2>/dev/null || true
+        sleep 2
+    fi
+
+    chattr -i /etc/resolv.conf 2>/dev/null || true
+    rm -f /etc/resolv.conf
+
+    if [ -s "$dir/resolv.symlink" ]
+    then
+        target="$(cat "$dir/resolv.symlink")"
+        ln -s "$target" /etc/resolv.conf 2>/dev/null || true
+    elif [ -s "$dir/resolv.conf" ]
+    then
+        install -m 0644 "$dir/resolv.conf" /etc/resolv.conf
+    else
+        cat > /etc/resolv.conf <<'NORMAL_DNS'
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+options timeout:2 attempts:2
+NORMAL_DNS
+    fi
+
+    # resolv.conf must be readable by normal applications.
+    if [ -e /etc/resolv.conf ] && [ ! -L /etc/resolv.conf ]
+    then
+        chmod 0644 /etc/resolv.conf
+    fi
+
+    if [ "$(cat "$dir/dnsmasq.state" 2>/dev/null)" = "active" ]
+    then
+        systemctl restart dnsmasq 2>/dev/null || true
+    else
+        systemctl stop dnsmasq 2>/dev/null || true
+    fi
+
+    # Return Tor to its pre-Anonym8 state.
+    if [ "$(cat "$dir/tor-default.state" 2>/dev/null)" = "active" ]
+    then
+        systemctl start tor@default 2>/dev/null || true
+    elif [ "$(cat "$dir/tor.state" 2>/dev/null)" = "active" ]
+    then
+        systemctl start tor 2>/dev/null || true
+    else
+        systemctl stop tor@default 2>/dev/null || true
+        systemctl stop tor 2>/dev/null || true
+    fi
+
+    # Verify restored DNS. Use safe fallback only if the saved resolver fails.
+    if ! timeout 12 getent hosts google.com >/dev/null 2>&1
+    then
+        echo -e "${YS}Original DNS did not respond; applying fallback DNS.$CE"
+
+        chattr -i /etc/resolv.conf 2>/dev/null || true
+        rm -f /etc/resolv.conf
+
+        cat > /etc/resolv.conf <<'FALLBACK_DNS'
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+options timeout:2 attempts:2
+FALLBACK_DNS
+        chmod 0644 /etc/resolv.conf
+    fi
+
+    rm -f "$dir/active"
+
+    echo -e "${GS}Normal network state restored.$CE"
+}
+
+function mou_anonym8_start_guarded
+{
+    local out
+    local dir
+
+    dir="$(mou_anonym8_restore_dir)"
+
+    mou_anonym8_backup_network_state || {
+        echo -e "${RS}Failed to save the current network state.$CE"
+        return 1
+    }
+
+    # Tor DNSPort uses localhost:53 while Anonym8 is enabled.
+    # Stop the normal dnsmasq service temporarily to release port 53.
+    systemctl stop dnsmasq 2>/dev/null || true
+    pkill -x dnsmasq 2>/dev/null || true
+
+    # Stop stale Tor instances before starting a clean session.
+    systemctl stop tor@default 2>/dev/null || true
+    systemctl stop tor 2>/dev/null || true
+    pkill -x tor 2>/dev/null || true
+
+    sleep 1
+
+    out="$(anonym8 start 2>&1 || /usr/bin/anonym8 start 2>&1 || true)"
+    printf "%s\n" "$out"
+
+    # Some Anonym8 versions fail to start the systemd instance themselves.
+    systemctl start tor@default 2>/dev/null ||
+    systemctl start tor 2>/dev/null ||
+    true
+
+    mou_anonym8_force_tor_dns
+    mou_anonym8_block_ipv6
+
+    if mou_anonym8_verify_tor
+    then
+        touch "$dir/active"
+        chmod 600 "$dir/active"
+        mou_set_anonym8_enabled
+        return 0
+    fi
+
+    echo
+    echo -e "${RS}Tor verification failed. Rolling back automatically...$CE"
+
+    anonym8 stop >/dev/null 2>&1 ||
+    /usr/bin/anonym8 stop >/dev/null 2>&1 ||
+    true
+
+    mou_anonym8_restore_network_state
+    mou_set_anonym8_disabled
+    return 1
+}
+
+function mou_anonym8_stop_and_restore
+{
+    local out
+    local test_user
+
+    test_user="${SUDO_USER:-moupi}"
+
+    if [ -z "$test_user" ] ||
+       [ "$test_user" = "root" ] ||
+       ! id "$test_user" >/dev/null 2>&1
+    then
+        test_user="moupi"
+    fi
+
+    out="$(anonym8 stop 2>&1 || /usr/bin/anonym8 stop 2>&1 || true)"
+    printf "%s\n" "$out"
+
+    mou_anonym8_restore_network_state
+    mou_set_anonym8_disabled
+
+    echo
+    echo -e "${YS}Checking normal internet connection as $test_user...${CE}"
+
+    if sudo -u "$test_user" \
+       timeout 12 getent hosts google.com >/dev/null 2>&1
+    then
+        echo -e "${GS}Normal DNS is working.${CE}"
+    else
+        echo -e "${RS}Normal DNS check failed.${CE}"
+    fi
+
+    if sudo -u "$test_user" \
+       env \
+          -u http_proxy -u https_proxy -u all_proxy \
+          -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+       curl -4fsS --max-time 15 https://api.ipify.org \
+       >/dev/null 2>&1
+    then
+        echo -e "${GS}Normal public internet connection is working.${CE}"
+    else
+        echo -e "${RS}Normal public internet check failed.${CE}"
+    fi
+}
+
+function mou_enable_anonym8_action
+{
+    clear
+    echo -e "Enabling anonym8..."
+    echo
+
+    if mou_anonym8_start_guarded
+    then
+        echo
+        echo -e "${GS}Anonym8 is enabled and Tor routing was verified.$CE"
+    else
+        echo
+        echo -e "${RS}Anonym8 was not enabled.$CE"
+    fi
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
+function mou_disable_anonym8_action
+{
+    clear
+    echo -e "Disabling anonym8..."
+    echo
+
+    mou_anonym8_stop_and_restore
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
+
+function mou_anonsurf_start_guarded
+{
+    local out
+    local dir
+
+    dir="$(mou_anonym8_restore_dir)"
+
+    # Do not run Anonsurf over an active Anonym8 session.
+    if [ "$(mou_anonym8_status 2>/dev/null)" = "enabled" ]
+    then
+        echo -e "${RS}Anonym8 is already enabled.${CE}"
+        echo -e "${YS}Disable Anonym8 before enabling Anonsurf.${CE}"
+        return 1
+    fi
+
+    mou_anonym8_backup_network_state || {
+        echo -e "${RS}Failed to save the current network state.${CE}"
+        return 1
+    }
+
+    # Release Tor DNS port 53 and remove stale Tor instances.
+    systemctl stop dnsmasq 2>/dev/null || true
+    pkill -x dnsmasq 2>/dev/null || true
+
+    systemctl stop tor@default 2>/dev/null || true
+    systemctl stop tor 2>/dev/null || true
+    pkill -x tor 2>/dev/null || true
+
+    sleep 1
+
+    out="$(
+        anonsurf start 2>&1 ||
+        /usr/bin/anonsurf start 2>&1 ||
+        true
+    )"
+
+    printf '%s\n' "$out"
+
+    systemctl start tor@default 2>/dev/null ||
+    systemctl start tor 2>/dev/null ||
+    true
+
+    mou_anonym8_force_tor_dns
+    mou_anonym8_block_ipv6
+
+    if mou_anonym8_verify_tor
+    then
+        touch "$dir/active"
+        chmod 600 "$dir/active"
+
+        mou_set_anonsurf_enabled
+
+        echo
+        echo -e "${GS}Anonsurf is enabled and Tor routing was verified.${CE}"
+        return 0
+    fi
+
+    echo
+    echo -e "${RS}Anonsurf verification failed. Rolling back automatically...${CE}"
+
+    anonsurf stop >/dev/null 2>&1 ||
+    /usr/bin/anonsurf stop >/dev/null 2>&1 ||
+    true
+
+    mou_anonym8_restore_network_state
+    mou_set_anonsurf_disabled
+
+    return 1
+}
+
+function mou_anonsurf_stop_and_restore
+{
+    local out
+    local test_user
+
+    test_user="${SUDO_USER:-moupi}"
+
+    if [ -z "$test_user" ] ||
+       [ "$test_user" = "root" ] ||
+       ! id "$test_user" >/dev/null 2>&1
+    then
+        test_user="moupi"
+    fi
+
+    out="$(
+        anonsurf stop 2>&1 ||
+        /usr/bin/anonsurf stop 2>&1 ||
+        true
+    )"
+
+    printf '%s\n' "$out"
+
+    mou_anonym8_restore_network_state
+    mou_set_anonsurf_disabled
+
+    echo
+    echo -e "${YS}Checking normal internet connection as $test_user...${CE}"
+
+    if sudo -u "$test_user" \
+       timeout 12 getent hosts google.com >/dev/null 2>&1
+    then
+        echo -e "${GS}Normal DNS is working.${CE}"
+    else
+        echo -e "${RS}Normal DNS check failed.${CE}"
+    fi
+
+    if sudo -u "$test_user" \
+       env \
+          -u http_proxy -u https_proxy -u all_proxy \
+          -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+       curl -4fsS --max-time 15 https://api.ipify.org \
+       >/dev/null 2>&1
+    then
+        echo -e "${GS}Normal public internet connection is working.${CE}"
+    else
+        echo -e "${RS}Normal public internet check failed.${CE}"
+    fi
+}
+
+
+function mou_enable_anonsurf_action
+{
+    clear
+    echo -e "Enabling anonsurf..."
+    echo
+
+    if ! mou_anonsurf_start_guarded
+    then
+        echo
+        echo -e "${RS}Anonsurf was not enabled.${CE}"
+    fi
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
+function mou_disable_anonsurf_action
+{
+    clear
+    echo -e "Disabling anonsurf..."
+    echo
+
+    mou_anonsurf_stop_and_restore
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
+function mou_enable_both_anonymity_action
+{
+    clear
+
+    echo -e "${RS}Combined Anonym8 + Anonsurf mode is disabled.${CE}"
+    echo
+    echo -e "${YS}Both tools modify Tor, DNS and firewall rules.${CE}"
+    echo -e "${YS}Use either Anonym8 or Anonsurf, not both.${CE}"
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
+function mou_disable_both_anonymity_action
+{
+    clear
+
+    echo -e "${YS}Stopping both tools and restoring normal networking...${CE}"
+
+    anonsurf stop >/dev/null 2>&1 ||
+    /usr/bin/anonsurf stop >/dev/null 2>&1 ||
+    true
+
+    anonym8 stop >/dev/null 2>&1 ||
+    /usr/bin/anonym8 stop >/dev/null 2>&1 ||
+    true
+
+    mou_set_anonsurf_disabled
+    mou_set_anonym8_disabled
+    mou_anonym8_restore_network_state
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
+function mou_restart_both_anonymity_action
+{
+    clear
+
+    echo -e "${RS}Combined restart is disabled.${CE}"
+    echo
+    echo -e "${YS}Restart Anonym8 or Anonsurf individually.${CE}"
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
+function mou_show_anonymity_status_action
+{
+    clear
+
+    anon8_state="$(mou_anonym8_status)"
+    anonsurf_state="$(mou_anonsurf_status)"
+
+    echo -e "$YS━━━━━━━━━━━━━━━━━━ ANONYMITY STATUS ━━━━━━━━━━━━━━━━━━$CE"
+    echo
+
+    case "$anon8_state" in
+        enabled) echo -e "Anonym8 : "$GS"enabled"$CE"" ;;
+        missing) echo -e "Anonym8 : "$RS"not installed"$CE"" ;;
+        *) echo -e "Anonym8 : "$RS"disabled"$CE"" ;;
+    esac
+
+    case "$anonsurf_state" in
+        enabled) echo -e "Anonsurf: "$GS"enabled"$CE"" ;;
+        missing) echo -e "Anonsurf: "$RS"not installed"$CE"" ;;
+        *) echo -e "Anonsurf: "$RS"disabled"$CE"" ;;
+    esac
+
+    echo
+    echo -e "$YS━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$CE"
+    echo -e "$PAKTC"
+    $READAK
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mou_find_netool_toolkit_dir
+{
+
+
+    for d in \
+        /opt/netool-toolkit \
+        /root/netool-toolkit \
+        /root/opensource/netool-toolkit \
+        /home/moupi/netool-toolkit \
+        /home/moupi/opensource/netool-toolkit \
+        "$PWD/netool-toolkit"
+    do
+        if [ -d "$d" ]
+        then
+            echo "$d"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+function mou_install_netool_toolkit
+{
+
+
+    clear
+    echo -e "${YS}Installing / fixing Netool-toolkit...$CE"
+    echo
+
+    url="https://github.com/r00t-3xp10it/netool-toolkit.git"
+    target="/opt/netool-toolkit"
+
+    existing="$(mou_find_netool_toolkit_dir 2>/dev/null || true)"
+
+    if [ -n "$existing" ]
+    then
+        echo -e "${GS}Found existing folder:$CE $existing"
+
+        if [ -d "$existing/.git" ]
+        then
+            echo -e "${YS}Updating existing repo...$CE"
+            git -C "$existing" pull --rebase || true
+        fi
+
+        target="$existing"
+    else
+        echo -e "${YS}Cloning repo to $target...$CE"
+        mkdir -p /opt
+        git clone "$url" "$target" || {
+            echo -e "${CE}Failed to clone Netool-toolkit.$CE"
+            echo -e "$PAKTC"
+            $READAK
+            return 1
+        }
+    fi
+
+    cd "$target" || {
+        echo -e "${RS}Cannot cd to $target$CE"
+        echo -e "$PAKTC"
+        $READAK
+        return 1
+    }
+
+    if [ -f INSTALL.sh ]
+    then
+        chmod +x INSTALL.sh
+        ./INSTALL.sh
+    elif [ -f install.sh ]
+    then
+        chmod +x install.sh
+        ./install.sh
+    elif [ -f setup.sh ]
+    then
+        chmod +x setup.sh
+        ./setup.sh
+    else
+        echo -e "${YS}No installer found. Folder contents:$CE"
+        ls -la
+    fi
+
+    echo
+    echo -e "$PAKTC"
+    $READAK
+}
+
+function mou_run_netool_toolkit
+{
+
+
+    dir="$(mou_find_netool_toolkit_dir 2>/dev/null || true)"
+
+    if [ -z "$dir" ]
+    then
+        echo -e "${CE}Netool-toolkit is not installed.$CE"
+        echo -n "Type install to install it: "
+        read -r ans
+
+        if [ "$ans" = "install" ]
+        then
+            mou_install_netool_toolkit
+        fi
+
+        return
+    fi
+
+    cd "$dir" || {
+        echo -e "${RS}Cannot cd to $dir$CE"
+        echo -e "$PAKTC"
+        $READAK
+        return 1
+    }
+
+    clear
+    echo -e "${YS}Running Netool-toolkit from:$CE $dir"
+    echo
+
+    if [ -f netool.sh ]
+    then
+        chmod +x netool.sh
+        ./netool.sh
+    elif [ -f Netool.sh ]
+    then
+        chmod +x Netool.sh
+        ./Netool.sh
+    elif [ -f netool ]
+    then
+        chmod +x netool
+        ./netool
+    elif [ -f netool.py ]
+    then
+        python3 netool.py || python2 netool.py
+    elif [ -f main.py ]
+    then
+        python3 main.py || python2 main.py
+    else
+        echo -e "${RS}Could not find Netool launcher.$CE"
+        echo
+        ls -la
+    fi
+
+    echo -e "$PAKTC"
+    $READAK
+}
+
 function banner
 {
 check_wlans
-	echo -e ""
-	echo -e "$COL         ████   ████╗  ██████╗  ██╗   ██╗  $CE v$VERSION"
-	echo -e "$COL         ██║█   █║██║ ██╔═══██╗ ██║   ██║  $CE"
-	echo -e "$COL         ██║██ ██║██║ ██║   ██║ ██║   ██║  $CE   by "$COL"Moamen Alsayed$CE"
-	echo -e "$COL         ██║ █ █║ ██║ ██║   ██║ ██║   ██║  $CE"
-	echo -e "$COL  The    ██║ ███║ ██║ ╚██████╔╝ ╚██████╔╝   script$CE"
-	echo -e "$COL         ╚═╝ ╚══╝ ╚═╝  ╚═════╝   ╚═════╝     $CE"
-	echo -e ""$YS"if"$CE") Ifconfig"
-	if [[ "$WLANCHECKING" = "" ]]
-	then            
-		echo -e ""$RS" 1"$CE") Enable "$RS"$WLANN"$CE"${SPACESN}"$RS"d1"$CE") Disable "$RS"$WLANN"$CE"${SPACESN}  "$RS"|"$CE" "$YS"start"$CE") Start monitor mode"
-		echo -e ""$RS" 2"$CE") Enable "$RS"$WLANNM"$CE"${SPACESM}"$RS"d2"$CE") Disable "$RS"$WLANNM"$CE"${SPACESM}  "$RS"|"$CE"  "$YS"stop"$CE") Stop monitor mode"
-	else
-		echo -e ""$YS" 1"$CE") Enable $WLANN${SPACESN}"$YS"d1"$CE") Disable $WLANN${SPACESN}  "$RS"|"$CE" "$YS"start"$CE") Start monitor mode"
-		echo -e ""$YS" 2"$CE") Enable $WLANNM${SPACESM}"$YS"d2"$CE") Disable $WLANNM${SPACESM}  "$RS"|"$CE"  "$YS"stop"$CE") Stop monitor mode"
-	fi
-	echo -e ""$YS" 3"$CE") Change MAC        "$YS"d3"$CE") Restore original MAC "$RS"|"$CE""$YS"update"$CE") Check for updates"
-	if [[ -f /usr/bin/anonym8 ]]
-	then
-	echo -e ""$YS" 4"$CE") Enable anonym8    "$YS"d4"$CE") Disable anonym8      "$RS"|"$CE""$YS"errors"$CE") Fix some errors"
-	else
-	echo -e ""$RS" 4"$CE") Enable anonym8    "$RS"d4"$CE") Disable anonym8      "$RS"|"$CE""$YS"errors"$CE") Fix some errors"
-	fi
-	if [[ -f /usr/bin/anonsurf ]]
-	then
-	echo -e ""$YS" 5"$CE") Enable anonsurf   "$YS"d5"$CE") Disable anonsurf     "$RS"|"$CE"    "$YS"ks"$CE") Keyboard shortucts"
-	echo -e ""$YS" 6"$CE") Anonsurf's status "$YS"d6"$CE") Restart anonsurf     "$RS"|"$CE""$YS"     d"$CE") Buy me a coffee"
-	else
-	echo -e ""$RS" 5"$CE") Enable anonsurf   "$RS"d5"$CE") Disable anonsurf     "$RS"|"$CE"    "$YS"ks"$CE") Keyboard shortucts"
-	echo -e ""$RS" 6"$CE") Anonsurf's status "$RS"d6"$CE") Restart anonsurf     "$RS"|"$CE"     "$YS"d"$CE") Buy me a coffee"
-	fi
-	echo -e ""$YS" 7"$CE") View public IP    "$YS"st"$CE") Speed Test           "$RS"|"$CE"     "$YS"s"$CE") Go to settings menu"
-	echo -e ""$YS" 8"$CE") View MAC"	 	     	 
-	echo -e ""$YS" 9"$CE") TOOLS             "$YS"15"$CE") Spoof EMAIL           "$YS"22"$CE") Show bandwidth"
-	if [[ -f /root/ngrok ]]
-	then
-		echo -e ""$YS"10"$CE") Handshake         "$YS"16"$CE") Ngrok port forward"
-	else
-		echo -e ""$YS"10"$CE") Handshake         "$RS"16"$CE") "$RS"Ngrok"$CE" port forward"
-	fi
-	if [[ -f /usr/local/bin/howdoi ]]
-	then
-		echo -e ""$YS"11"$CE") Find WPS pin      "$YS"17"$CE") Ask (Howdoi tool)"
-	else
-		echo -e ""$YS"11"$CE") Find WPS pin      "$RS"17"$CE") Ask ("$RS"Howdoi"$CE" tool)"
-	fi
-	echo -e ""$YS"12"$CE") WEP menu          "$YS"18"$CE") Auto-exploit browser"
-	echo -e ""$YS"13"$CE") MITM              "$YS"19"$CE") Geolocate an IP"
-	echo -e ""$YS"14"$CE") Metasploit        "$YS"20"$CE") Bruteforce login"   
-	echo -e ""$YS" 0"$CE") Exit              "$YS"21"$CE") Sqlmap automated"
-	echo "Choose: "
-	read -e YORNAA
-	#~ echo "$YORNNA"
-	#~ history -s "$YORNNA"
-	clear
+
+    PRIMARY_WIFI="$(mou_primary_wireless_card)"
+    WIFI_LABEL="no wireless card"
+    WIFI_COLOR="$RS"
+
+    if [ -n "$PRIMARY_WIFI" ]
+    then
+        WIFI_STATE="$(mou_wireless_admin_state "$PRIMARY_WIFI")"
+        WIFI_LABEL="$PRIMARY_WIFI $WIFI_STATE"
+        [ "$WIFI_STATE" = "enabled" ] && WIFI_COLOR="$GS" || WIFI_COLOR="$RS"
+    fi
+
+    MON_CARDS="$(mou_monitor_cards | xargs)"
+    MON_COLOR="$RS"
+
+    if [ -n "$MON_CARDS" ]
+    then
+        MON_LABEL="Monitor mode enabled ($MON_CARDS)"
+        MON_COLOR="$GS"
+    else
+        if [ -n "$PRIMARY_WIFI" ]
+        then
+            MON_LABEL="Enable monitor mode ($PRIMARY_WIFI)"
+        else
+            MON_LABEL="Enable monitor mode (no card)"
+        fi
+        MON_COLOR="$RS"
+    fi
+
+    ANON8_STATE="$(mou_anonym8_status)"
+    ANON8_COLOR="$RS"
+
+    case "$ANON8_STATE" in
+        enabled)
+            ANON8_LABEL="Anonym8 enabled"
+            ANON8_COLOR="$GS"
+            ;;
+        missing)
+            ANON8_LABEL="Anonym8 not installed"
+            ANON8_COLOR="$RS"
+            ;;
+        *)
+            ANON8_LABEL="Anonym8 disabled"
+            ANON8_COLOR="$RS"
+            ;;
+    esac
+
+    ANONSURF_STATE="$(mou_anonsurf_status)"
+    ANONSURF_COLOR="$RS"
+
+    case "$ANONSURF_STATE" in
+        enabled)
+            ANONSURF_LABEL="Anonsurf enabled"
+            ANONSURF_COLOR="$GS"
+            ;;
+        missing)
+            ANONSURF_LABEL="Anonsurf not installed"
+            ANONSURF_COLOR="$RS"
+            ;;
+        *)
+            ANONSURF_LABEL="Anonsurf disabled"
+            ANONSURF_COLOR="$RS"
+            ;;
+    esac
+
+    clear
+    echo -e ""
+    echo -e "$COL         ████   ████╗  ██████╗  ██╗   ██╗  $CE v$VERSION"
+    echo -e "$COL         ██║█   █║██║ ██╔═══██╗ ██║   ██║  $CE"
+    echo -e "$COL         ██║██ ██║██║ ██║   ██║ ██║   ██║  $CE   by "$COL"Moamen Alsayed$CE"
+    echo -e "$COL         ██║ █ █║ ██║ ██║   ██║ ██║   ██║  $CE"
+    echo -e "$COL  The    ██║ ███║ ██║ ╚██████╔╝ ╚██████╔╝   script$CE"
+    echo -e "$COL         ╚═╝ ╚══╝ ╚═╝  ╚═════╝   ╚═════╝     $CE"
+    echo
+
+    echo -e "$YS━━━━━━━━━━━━━━━━━━━━ SYSTEM ━━━━━━━━━━━━━━━━━━━━$CE"
+    printf "%b  %-9s%b %s\n" "$YS" "if)" "$CE" "Ifconfig"
+    printf "%b  %-9s%b %s\n" "$YS" "update)" "$CE" "Check updates"
+    printf "%b  %-9s%b %s\n" "$YS" "7)" "$CE" "View public IP"
+    printf "%b  %-9s%b %s\n" "$YS" "errors)" "$CE" "Fix errors"
+    printf "%b  %-9s%b %s\n" "$YS" "st)" "$CE" "Speed Test"
+    printf "%b  %-9s%b %s\n" "$YS" "s)" "$CE" "Settings"
+    echo
+
+    echo -e "$YS━━━━━━━━━━━━━━━━━━━ WIRELESS ━━━━━━━━━━━━━━━━━━━$CE"
+    printf "%b  %-9s%b %s " "$YS" "1)" "$CE" "Wireless cards"
+    printf "%b(%s)%b\n" "$WIFI_COLOR" "$WIFI_LABEL" "$CE"
+
+    printf "%b  %-9s%b " "$YS" "2)" "$CE"
+    printf "%b%s%b\n" "$MON_COLOR" "$MON_LABEL" "$CE"
+
+    printf "%b  %-9s%b %s\n" "$YS" "d2)" "$CE" "Disable monitor mode"
+    printf "%b  %-9s%b %s\n" "$YS" "3)" "$CE" "Change MAC"
+    printf "%b  %-9s%b %s\n" "$YS" "d3)" "$CE" "Restore original MAC"
+    printf "%b  %-9s%b %s\n" "$YS" "8)" "$CE" "View MAC"
+    echo
+
+    echo -e "$YS━━━━━━━━━━━━━━━━━━━ ANONYMITY ━━━━━━━━━━━━━━━━━━$CE"
+    printf "%b  %-9s%b " "$YS" "4)" "$CE"
+    printf "%b%s%b\n" "$ANON8_COLOR" "$ANON8_LABEL" "$CE"
+    printf "%b  %-9s%b %s\n" "$YS" "d4)" "$CE" "Disable anonym8"
+
+    printf "%b  %-9s%b " "$YS" "5)" "$CE"
+    printf "%b%s%b\n" "$ANONSURF_COLOR" "$ANONSURF_LABEL" "$CE"
+    printf "%b  %-9s%b %s\n" "$YS" "d5)" "$CE" "Disable anonsurf"
+
+    printf "%b  %-9s%b %s\n" "$YS" "45)" "$CE" "Enable Anonym8 + Anonsurf"
+    printf "%b  %-9s%b %s\n" "$YS" "d45)" "$CE" "Disable Anonym8 + Anonsurf"
+    printf "%b  %-9s%b %s\n" "$YS" "6)" "$CE" "Show Anonymity status"
+    printf "%b  %-9s%b %s\n" "$YS" "d6)" "$CE" "Restart Anonym8 + Anonsurf"
+    echo
+
+    echo -e "$YS━━━━━━━━━━━━━━━━━━━━ TOOLS ━━━━━━━━━━━━━━━━━━━━━$CE"
+    printf "%b  %-9s%b %s\n" "$YS" "9)" "$CE" "Tools menu"
+    printf "%b  %-9s%b %s\n" "$YS" "10)" "$CE" "Handshake"
+    printf "%b  %-9s%b %s\n" "$YS" "11)" "$CE" "Find WPS pin"
+    printf "%b  %-9s%b %s\n" "$YS" "12)" "$CE" "WEP menu"
+    printf "%b  %-9s%b %s\n" "$YS" "13)" "$CE" "MITM"
+    printf "%b  %-9s%b %s\n" "$YS" "14)" "$CE" "Metasploit"
+    printf "%b  %-9s%b %s\n" "$YS" "15)" "$CE" "Spoof EMAIL"
+    printf "%b  %-9s%b %s\n" "$YS" "16)" "$CE" "Ngrok port forward"
+    printf "%b  %-9s%b %s\n" "$YS" "17)" "$CE" "Ask Howdoi"
+    printf "%b  %-9s%b %s\n" "$YS" "18)" "$CE" "Auto-exploit browser"
+    printf "%b  %-9s%b %s\n" "$YS" "19)" "$CE" "Geolocate IP"
+    printf "%b  %-9s%b %s\n" "$YS" "20)" "$CE" "Bruteforce login"
+    printf "%b  %-9s%b %s\n" "$YS" "21)" "$CE" "Sqlmap automated"
+    printf "%b  %-9s%b %s\n" "$YS" "22)" "$CE" "Show bandwidth"
+    echo
+
+    echo -e "$YS━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$CE"
+    printf "%b  %-9s%b %s\n" "$YS" "0)" "$CE" "Exit"
+    echo -n "Choose: "
+    read -e YORNAA
+    clear
 }
+
+
+
+
+
+
+
+
+
+
+
 function enable_wlan
 {
-	O4=0
-	echo -e "Enabling $WLANN..."
-	rfkill unblock wifi &> /dev/null; rfkill unblock all &> /dev/null
-	ifconfig $WLANN up &>/dev/null && echo -e ""$YS"Done"$CE"" && O4=1  || echo -e ""$RS"Error. I can't find your wireless adapter"$CE""
+    mou_manage_wireless_cards
 }
+
+
 function disable_wlan
 {
-	echo -e "Disabling $WLANN..."
-	rfkill unblock wifi &> /dev/null; rfkill unblock all &> /dev/null
-	ifconfig $WLANN down &>/dev/null && echo -e ""$YS"Done"$CE"" && O4=1 || echo -e ""$RS"Error. I can't find your wireless adapter."$CE""
+    mou_manage_wireless_cards
 }
+
 function interface_selection
 {
 if [[ "$WLANCHECKING" = "" ]]
@@ -655,7 +2662,7 @@ function listshortcuts
 		KSSET="ghost-phisher"
 	elif [[ "$nn" = "14" ]]
 	then
-		TITLE="Xerxes"
+		TITLE="xerxes"
 		NAMECD="cd /root/xerxes"
 		KSSET="./xerxes"
 	elif [[ "$nn" = "15" ]]
@@ -862,6 +2869,8 @@ function listshortcuts
 }
 function reinstall_tools
 {
+
+
 while true
 do
 	clear
@@ -1291,6 +3300,10 @@ done
 	#~ fi
 	#~ done
 }
+
+
+
+
 function errors_menu
 {
 while true
@@ -1349,7 +3362,7 @@ then
 	echo -e "Enter you interface"
 	read INTWASH
 	echo -e "Press "$YS"many key"$CE" to test wash"
-	echo -e "Also try "wash -i wlan0mon -a" to display all networks"
+	echo -e "Also try "wash -i $(cat /tmp/mscript_monitor_iface 2>/dev/null || echo wlan0) -a" to display all networks"
 	wash -i $INTWASH
 elif [[ "$ERRS" = "3" ]]
 then
@@ -3129,19 +5142,21 @@ done
 }
 function wifi_tools
 {
+
+
 	while true
 	do
 	printf '\033]2;WIFI TOOLS\a'
 	clear
 	TERMINALTITLE="WIFI TOOLS"
 	dash_calc
-	if [[ -d /root/fluxion ]]
+                if [[ -x /usr/sbin/wifite ]] || command -v wifite >/dev/null 2>&1
 	then
 		echo -e ""$YS" 1"$CE") Fluxion               The future of MITM WPA attacks"
 	else
 		echo -e ""$RS" 1"$CE") "$RS"Fluxion"$CE"               The future of MITM WPA attacks"
 	fi
-	if [[ -f /usr/bin/wifite ]]
+	if [[ -x /usr/sbin/wifite ]] || [[ -x /usr/bin/wifite ]] || command -v wifite >/dev/null 2>&1
 	then
 		echo -e ""$YS" 2"$CE") Wifite                Automated wireless attack tool"
 	else
@@ -3175,7 +5190,7 @@ function wifi_tools
 	then
 		echo -e ""$YS" 6"$CE") Netool-toolkit        MitM pentesting opensource toolkit"
 	else
-		echo -e ""$RS" 6"$CE") "$RS"Netool-toolkit"$CE"        MitM pentesting opensource toolkit"
+		echo -e ""$CE" 6"$CE") "$CE"Netool-toolkit"$CE"        MitM pentesting opensource toolkit"
 	fi
 	if [[ -d /root/hakkuframework ]]
 	then
@@ -3213,11 +5228,11 @@ function wifi_tools
 	else
 		echo -e ""$RS"12"$CE") "$RS"KickThemOut"$CE"           Kick devices off your network"
 	fi
-	if [[ -d "/usr/share/ghost-phisher" ]]
+	if [[ -x "/usr/local/bin/ghost-phisher" ]] && [[ -f "/opt/ghost-phisher/Ghost-Phisher/ghost.py" ]]
 	then	
 		echo -e ""$YS"13"$CE") Ghost-Phisher         Fake AP,MITM,Session hijacking etc..."
 	else
-		echo -e ""$RS"13"$CE") "$RS"Ghost-Phisher"$CE"         Fake AP,MITM,Session hijacking etc..."
+		echo -e ""$RS"13"$CE") "$RS"Ghost-Phisher"$CE"         Unavailable on this system"
 	fi
 	if [[ -d /root/The-Eye ]]
 	then	
@@ -3225,13 +5240,13 @@ function wifi_tools
 	else
 		echo -e ""$RS"14"$CE") "$RS"The Eye"$CE"               Detects ARP poisoning DNS spoofing etc..."
 	fi
-	if [[ -d /root/xerxes ]]
-	then	
-		echo -e ""$YS"15"$CE") Xerxes                The most powerful DoS tool(CAUTION)"
+	if [ -x /home/moupi/MOUD/moud ]
+	then
+	   printf "%b%2s%b) %-22s%s\n" "$YS" "15" "$CE" "xerxes" "The most powerful DoS tool(CAUTION)"
 	else
-		echo -e ""$RS"15"$CE") "$RS"Xerxes"$CE"                The most powerful DoS tool(CAUTION)"
+	   printf "%b%2s%b) %b%-22s%b%s\n" "$RS" "15" "$CE" "$RS" "xerxes" "$CE" "The most powerful DoS tool(CAUTION)"
 	fi
-	if [[ -d /root/KatanaFramework ]]
+	if command -v ktf.console >/dev/null 2>&1 && [[ -d /usr/share/KatanaFramework ]]
 	then
 		echo -e ""$YS"16"$CE") Katana Framework      Many penetration testing features"
 	else
@@ -3323,9 +5338,9 @@ function wifi_tools
 	fi
 	if [[ -d /root/HT-WPS-Breaker ]]
 	then
-		echo -e ""$YS"31"$CE") HT-WPS-Breaker            High Touch WPS Breaker"
+		printf "%b%2s%b) %-22s%s\n" "$YS" "31" "$CE" "HT-WPS-Breaker" "High Touch WPS Breaker"
 	else
-		echo -e ""$RS"31"$CE") "$RS"HT-WPS-Breaker"$CE"            High Touch WPS Breaker"
+		printf "%b%2s%b) %b%-22s%b%s\n" "$RS" "31" "$CE" "$RS" "HT-WPS-Breaker" "$CE" "High Touch WPS Breaker"
 	fi
 	echo -e ""$YS" b"$CE") Go back"
 	echo -e ""$YS"00"$CE") Main menu"
@@ -3356,21 +5371,30 @@ function wifi_tools
 				continue
 			fi
 		fi
-	elif [[ "$APPP" = "2" ]]
-	then
-		if [[ -f /usr/bin/wifite ]]
-		then
-			wifite
-		else
-			echo -e "$TNI"
-			read INSTALL
-			if [[ "$INSTALL" = "install" ]]
-			then
-				install_wifite
-			else
-				continue
-			fi
-		fi
+        elif [[ "$APPP" = "2" ]]
+        then
+                clear
+                echo -e "\033[1;36mLaunching Wifite\033[0m"
+                echo -e "\033[1;33mUse only on Wi-Fi networks you own or have permission to test.\033[0m"
+                echo
+
+                if [[ ! -x /usr/sbin/wifite ]] && ! command -v wifite >/dev/null 2>&1
+                then
+                        echo -e "\033[1;31m[!] Wifite is not installed.\033[0m"
+                        echo -e "Install with:"
+                        echo -e "  sudo apt install -y wifite"
+                        echo
+                        echo -e "Press any key to continue"
+                        read -n 1
+                        continue
+                fi
+
+                sudo /usr/sbin/wifite
+
+                echo
+                echo -e "Press any key to continue"
+                read -n 1
+                continue
 	elif [[ "$APPP" = "3" ]]
 	then
 		if [[ -d /root/wifiphisher ]]
@@ -3430,20 +5454,7 @@ function wifi_tools
 		fi
 	elif [[ "$APPP" = "6" ]]
 	then
-		if [[ -d "/root/opensource" ]]
-		then
-			cd /root/opensource
-			./netool.sh
-		else
-			echo -e "$TNI"
-			read INSTALL
-			if [[ "$INSTALL" = "install" ]]
-			then
-				install_netool
-			else
-				continue
-			fi
-		fi
+		mou_run_netool_toolkit
 	elif [[ "$APPP" = "7" ]]
 	then
 		if [[ -d /root/hakkuframework ]]
@@ -3554,23 +5565,27 @@ function wifi_tools
 				continue
 			fi
 		fi
-	elif [[ "$APPP" = "13" ]]
-	then
-		if [[ -d "/usr/share/ghost-phisher" ]]
-		then	
-			cd /root/ghost-phisher/Ghost-Phisher
-			python ghost.py
-			cd
-		else
-			echo -e "$TNI"
-			read INSTALL
-			if [[ "$INSTALL" = "install" ]]
-			then
-				install_ghostphisher
-			else
-				continue
-			fi
-		fi
+  elif [[ "$APPP" = "13" ]]
+  then
+          if [[ -x "/usr/local/bin/ghost-phisher" ]] &&
+             [[ -f "/opt/ghost-phisher/Ghost-Phisher/ghost.py" ]]
+          then
+                  /usr/local/bin/ghost-phisher
+                  echo
+                  echo -e "$PAKTGB"
+                  $READAK
+                  clear
+          else
+                  echo -e "$TNI"
+                  read INSTALL
+
+                  if [[ "$INSTALL" = "install" ]]
+                  then
+                          install_ghostphisher
+                  else
+                          continue
+                  fi
+          fi
 	elif [[ "$APPP" = "14" ]]
 	then
 		if [[ -d "/root/The-Eye" ]]
@@ -3590,46 +5605,17 @@ function wifi_tools
 		fi
 	elif [[ "$APPP" = "15" ]]
 	then
-		if [[ -d "/root/xerxes" ]]
-		then
-			echo -e "Do you own the site you want to DoS?"$YNONLY""
-			read DOSTERM
-			if [[ "$DOSTERM" = "y" ]]
-			then
-
-				clear
-				echo -e "Enter your site(e.g: iownthissite.com): "
-				echo -e "(without www)"
-				read -e SITEDOS
-				clear
-				echo -e "Launching www.isitdownrightnow.com for $SITEDOS"
-				sleep 4
-				gio open http://www.isitdownrightnow.com/"$SITEDOS".html
-				clear	
-				cd /root/xerxes
-				SITEDOSX=www.$SITEDOS
-				echo -e "Press "$YS"any key"$CE" to start DoS on $SITEDOSX"
-				$READAK
-				./xerxes $SITEDOSX 80
-			else
-				clear
-				echo -e "Then never try this."
-				sleep 3
-				exec bash "$0"
-			fi
-		else
-			echo -e "$TNI"
-			read INSTALL
-			if [[ "$INSTALL" = "install" ]]
-			then
-				install_xerxes
-			else
-				continue
-			fi
-		fi
+		clear
+		echo -e "[1;36m=== XERXES Tool Launcher ===[0m"
+		read -p "Enter website/IP: " target
+		read -p "Enter port: " port
+		echo -e "[1;32mRunning Xerxes: ./moud $target $port[0m"
+		cd /home/moupi/MOUD && ./moud "$target" "$port"
+		echo ""
+		read -p "Press [Enter] to return to menu..."
 	elif [[ "$APPP" = "16" ]]
 	then
-		if [[ -d "/usr/share/KatanaFramework" ]]
+		if command -v ktf.console >/dev/null 2>&1 && [[ -d "/usr/share/KatanaFramework" ]]
 		then
 			ktf.console
 		else
@@ -3642,23 +5628,31 @@ function wifi_tools
 				continue
 			fi
 		fi
-	elif [[ "$APPP" = "17" ]]
-	then
-		if [[ -d "/root/airgeddon" ]]
-		then
-			cd /root/airgeddon
-			./airgeddon.sh
-			cd
-		else
-			echo -e "$TNI"
-			read INSTALL
-			if [[ "$INSTALL" = "install" ]]
-			then
-				install_airgeddon
-			else
-				continue
-			fi
-		fi
+        elif [[ "$APPP" = "17" ]]
+        then
+                clear
+                echo -e "\033[1;36mLaunching Airgeddon\033[0m"
+                echo -e "\033[1;33mUse only on Wi-Fi networks you own or have permission to test.\033[0m"
+                echo
+
+                if ! command -v airgeddon >/dev/null 2>&1
+                then
+                        echo -e "\033[1;31m[!] airgeddon command not found.\033[0m"
+                        echo -e "Fix launcher with:"
+                        echo -e "  sudo ln -sf /root/airgeddon/airgeddon.sh /usr/bin/airgeddon"
+                        echo -e "  sudo chmod +x /usr/bin/airgeddon"
+                        echo
+                        echo -e "Press any key to continue"
+                        read -n 1
+                        continue
+                fi
+
+                airgeddon
+
+                echo
+                echo -e "Press any key to continue"
+                read -n 1
+                continue
 	elif [[ "$APPP" = "18" ]]
 	then
 		if [[ -d "/usr/share/websploit" ]]
@@ -3990,6 +5984,10 @@ function wifi_tools
 	fi
 	done
 }
+
+
+
+
 function remote_access
 {
 	while true 
@@ -5323,6 +7321,20 @@ function information_gathering
 		else
 			echo -e ""$RS" 8"$CE") "$RS"MouGather"$CE"            OSINT Information Gathering"
 		fi
+                echo -e ""$YS" 9"$CE") Shodan               Internet-exposed assets search."
+                echo -e ""$YS"10"$CE") Maltego              OSINT link analysis GUI."
+   if [[ -x /usr/local/bin/gosearch ]]
+   then
+           printf "%b%2s%b) %-20s%s\n" "$YS" "11" "$CE" "GoSearch" "Search usernames across many websites"
+   else
+           printf "%b%2s%b) %b%-20s%b%s\n" "$RS" "11" "$CE" "$RS" "GoSearch" "$CE" "Search usernames across many websites"
+   fi
+   if command -v phoneintel >/dev/null 2>&1
+   then
+           printf "%b%2s%b) %-20s%s\n" "$YS" "12" "$CE" "PhoneIntel" "Analyze phone numbers using public OSINT data"
+   else
+           printf "%b%2s%b) %b%-20s%b%s\n" "$RS" "12" "$CE" "$RS" "PhoneIntel" "$CE" "Analyze phone numbers using public OSINT data"
+   fi
 		echo -e ""$YS" b"$CE") Go back"
 		echo -e ""$YS"00"$CE") Main menu"
 		echo -e "Choose: "
@@ -5353,6 +7365,167 @@ function information_gathering
 			continue
 		fi
 
+
+
+                if [[ "$INFOG" = 9 ]]
+                then
+                        clear
+                        echo -e "\033[1;36mShodan CLI\033[0m"
+                        echo -e "\033[1;33mUse only for authorized OSINT and asset checking.\033[0m"
+                        echo
+
+                        if ! command -v shodan >/dev/null 2>&1
+                        then
+                                echo -e "\033[1;31m[!] Shodan CLI is not installed.\033[0m"
+                                echo -e "Install with:"
+                                echo -e "  python3 -m pip install --user --break-system-packages shodan"
+                                echo
+                                echo -e "Press any key to continue"
+                                read -n 1
+                                continue
+                        fi
+
+                        echo -e "Examples:"
+                        echo -e "  init YOUR_API_KEY"
+                        echo -e "  host 8.8.8.8"
+                        echo -e "  search apache"
+                        echo
+                        echo -e "Enter Shodan arguments:"
+                        read -e SHODAN_ARGS
+                        clear
+                        if [[ "$SHODAN_ARGS" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
+                        then
+                                shodan host "$SHODAN_ARGS"
+                        else
+                                shodan $SHODAN_ARGS
+                        fi
+
+                        echo
+                        echo -e "Press any key to continue"
+                        read -n 1
+                        continue
+                fi
+
+                if [[ "$INFOG" = 10 ]]
+                then
+                        clear
+                        echo -e "\033[1;36mMaltego\033[0m"
+                        echo -e "\033[1;33mLaunching Maltego from current desktop session...\033[0m"
+                        echo
+
+                        if ! command -v maltego >/dev/null 2>&1
+                        then
+                                echo -e "\033[1;31m[!] Maltego command not found.\033[0m"
+                                echo -e "Try:"
+                                echo -e "  sudo apt install -y maltego"
+                                echo
+                                echo -e "Press any key to continue"
+                                read -n 1
+                                continue
+                        fi
+
+                        if [[ -n "$SUDO_USER" && "$SUDO_USER" != "root" ]]
+                        then
+                                REAL_USER="$SUDO_USER"
+                                REAL_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
+                                xhost +SI:localuser:root >/dev/null 2>&1 || true
+                                sudo -u "$REAL_USER" env DISPLAY="$DISPLAY" XAUTHORITY="$REAL_HOME/.Xauthority" maltego
+                        else
+                                maltego
+                        fi
+
+                        echo
+                        echo -e "Press any key to continue"
+                        read -n 1
+                        continue
+                fi
+
+
+                if [[ "$INFOG" = 11 ]]
+                then
+                        clear
+                        echo -e "\033[1;36mGoSearch\033[0m"
+                        echo -e "\033[1;33mSearch usernames across many websites.\033[0m"
+                        echo
+
+                        if [[ ! -x /usr/local/bin/gosearch ]]
+                        then
+                                echo -e "\033[1;31m[!] GoSearch is not installed.\033[0m"
+                                echo
+                                echo "Install it with:"
+                                echo "sudo env GOBIN=/usr/local/bin go install github.com/ibnaleem/gosearch@latest"
+                                echo
+                                echo "Press any key to continue"
+                                read -r -n 1 -s
+                                echo
+                                continue
+                        fi
+
+                        read -r -p "Username: " GOSEARCH_USERNAME
+                        echo
+
+                        if [[ -z "$GOSEARCH_USERNAME" ]]
+                        then
+                                echo -e "\033[1;31m[!] Username cannot be empty.\033[0m"
+                        else
+                                /usr/local/bin/gosearch \
+                                        -u "$GOSEARCH_USERNAME" \
+                                        --no-false-positives
+                        fi
+
+                        echo
+                        echo "Press any key to continue"
+                        read -r -n 1 -s
+                        echo
+                        continue
+                fi
+
+
+                if [[ "$INFOG" = 12 ]]
+                then
+                        clear
+                        echo -e "\033[1;36mPhoneIntel\033[0m"
+                        echo -e "\033[1;33mAnalyze a phone number using public OSINT data.\033[0m"
+                        echo
+
+                        read -r -p "Phone number with country code, example +201001234567: " PHONEINTEL_INPUT
+                        echo
+
+                        if [[ "$PHONEINTEL_INPUT" = "b" ||
+                              "$PHONEINTEL_INPUT" = "B" ]]
+                        then
+                                continue
+                        fi
+
+                        PHONE_DIGITS="$(
+                                printf '%s' "$PHONEINTEL_INPUT" |
+                                tr -cd '0-9'
+                        )"
+
+                        if [[ ! "$PHONE_DIGITS" =~ ^[0-9]{7,15}$ ]]
+                        then
+                                echo -e "\033[1;31m[!] Enter a valid international phone number.\033[0m"
+                        elif [[ -x /usr/local/bin/phoneintel ]]
+                        then
+                                /usr/local/bin/phoneintel \
+                                        --info "+$PHONE_DIGITS"
+                        elif command -v phoneintel >/dev/null 2>&1
+                        then
+                                phoneintel \
+                                        --info "+$PHONE_DIGITS"
+                        else
+                                echo -e "\033[1;31m[!] PhoneIntel is not installed.\033[0m"
+                                echo
+                                echo "Expected command:"
+                                echo "/usr/local/bin/phoneintel"
+                        fi
+
+                        echo
+                        echo "Press any key to continue"
+                        read -r -n 1 -s
+                        echo
+                        continue
+                fi
 
 
 		if [[ "$INFOG" = 1 ]]
@@ -6449,8 +8622,6 @@ function hidden_shortcuts
 	echo -e ""$YS"  changelog"$CE") View the changelog of the mscript versions"
 	echo -e ""$YS"     pstart"$CE") Service postgresql start"
 	echo -e ""$YS"      pstop"$CE") Service postgresql stop"
-	echo -e ""$YS"     nstart"$CE") Service network-manager start"
-	echo -e ""$YS"      nstop"$CE") Service network-manager stop"
 	echo -e ""$YS"     astart"$CE") Service apache2 start"
 	echo -e ""$YS"      astop"$CE") Service apache2 stop"
 	echo -e ""$YS"nessusstart"$CE") Start Nessus"
@@ -6584,33 +8755,100 @@ function tools_menu
 }
 function public_ip
 {
-	clear
-	echo -e ""$BS"Please wait..."$CE""
-	CHECKMON=$(ifconfig | grep "mon")
-	if [[ "$CHECKMON" = "" ]]
-	then
-		clear
-		PUBLICIP=$(curl -s ipinfo.io/ip)
-		if [[ "$PUBLICIP" = "" ]]
-		then
-			PUBLICIP=$(curl -s checkip.dyndns.org | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
-			if [[ "$PUBLICIP" = "" ]]
-			then
-				clear
-				PUBLICIP="Connection error."
-			fi
-		fi
-		echo "Your public IP is: "$PUBLICIP""
-		#~ curl -s checkip.dyndns.org | sed -e 's/.*Current IP Address: //' -e 's/<.*$//'
-	else
-		echo -e "When monitor mode is enabled, you don't have internet access."
-		echo -e "Select 'd2' to disable monitor mode"
-		echo -e "$PAKTGB"
-		$READAK
-		clear
-		exec bash "$0"
-	fi
+    local public_ip=""
+    local response=""
+    local tor_json=""
+    local tor_status=""
+    local anon_state=""
+    local anonsurf_state=""
+    local endpoint=""
+
+    clear
+
+    anon_state="$(mou_anonym8_status 2>/dev/null || echo disabled)"
+    anonsurf_state="$(mou_anonsurf_status 2>/dev/null || echo disabled)"
+
+    # Try multiple IP services because some providers reject Tor exits.
+    for endpoint in         "https://api.ipify.org"         "https://icanhazip.com"         "https://ifconfig.me/ip"
+    do
+        response="$(
+            curl -4fsS                 --max-time 20                 "$endpoint"                 2>/dev/null |
+            tr -d '\r\n'
+        )"
+
+        if printf '%s' "$response" |
+           grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+        then
+            public_ip="$response"
+            break
+        fi
+    done
+
+    # Only query Tor status when Anonym8 is marked enabled.
+    if [ "$anon_state" = "enabled" ] || [ "$anonsurf_state" = "enabled" ] || [ "$anonsurf_state" = "enabled" ]
+    then
+        tor_json="$(
+            curl -4fsS                 --max-time 25                 https://check.torproject.org/api/ip                 2>/dev/null || true
+        )"
+
+        tor_status="$(
+            printf '%s' "$tor_json" |
+            sed -nE               's/.*"IsTor"[[:space:]]*:[[:space:]]*(true|false).*/\1/p'
+        )"
+
+        # Use the Tor endpoint IP if other services rejected the exit.
+        if [ -z "$public_ip" ]
+        then
+            public_ip="$(
+                printf '%s' "$tor_json" |
+                sed -nE                   's/.*"IP"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p'
+            )"
+        fi
+    fi
+
+    if printf '%s' "$public_ip" |
+       grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+    then
+        echo -e "Your public IP is: ${GS}$public_ip${CE}"
+
+        if [ "$anon_state" = "enabled" ]
+        then
+            echo -e "Anonym8: ${GS}enabled${CE}"
+        else
+            echo -e "Anonym8: ${RS}disabled${CE}"
+        fi
+
+        if [ "$anonsurf_state" = "enabled" ]
+        then
+            echo -e "Anonsurf: ${GS}enabled${CE}"
+        else
+            echo -e "Anonsurf: ${RS}disabled${CE}"
+        fi
+
+        if [ "$anon_state" != "enabled" ] && [ "$anonsurf_state" != "enabled" ] && [ "$anonsurf_state" != "enabled" ]
+        then
+            echo -e "Connection: ${GS}Direct connection — anonymity tools disabled${CE}"
+        else
+            case "$tor_status" in
+                true)
+                    echo -e "Connection: ${GS}Tor confirmed${CE}"
+                    ;;
+                false)
+                    echo -e "Connection: ${RS}Warning — not recognized as Tor${CE}"
+                    ;;
+                *)
+                    echo -e "Connection: ${YS}Anonym8 enabled — Tor check unavailable${CE}"
+                    ;;
+            esac
+        fi
+    else
+        echo -e "${RS}Unable to retrieve a valid public IP address.${CE}"
+    fi
+
+    echo -e "$PAKTC"
+    $READAK
 }
+
 function terms_of_use
 {
 	printf '\033]2;TERMS OF USE\a'
@@ -6696,37 +8934,11 @@ function eternalblue_check
 }
 function start_menu
 {
-	O1=0
-	O2=0
-	O3=0
-	echo -e "Enabling $WLANNM..."
-	enable_wlan
-	echo -e "Killing services..."
-	airmon-ng check kill &> /dev/null && echo -e ""$YS"Done"$CE"" && O1=1
-	echo -e "Starting monitor mode..."
-	if [[ "$ALFA" = "yes" ]]
-	then
-		ifconfig $WLANN down
-		iwconfig $WLANN mode monitor &> /dev/null && echo -e ""$YS"Done"$CE"" && O2=1
-		ifconfig $WLANN up
-	else
-		airmon-ng start $WLANN | grep "monitor mode" | awk -F "(" {'print $2'} | cut -d ')' -f1 &> /dev/null && echo -e ""$YS"Done"$CE"" && O2=1
-	fi
-	if [[ -f "$LPATH"/settings/startmac.txt ]]
-	then
-		read STARTMAC < "$LPATH"/settings/startmac.txt
-	else
-		STARTMAC="$DEFMAC"
-	fi
-	echo -e "Changing mac address of $WLANNM to "$STARTMAC"..."
-	ifconfig $WLANNM down
-	macchanger -m $STARTMAC $WLANNM &> /dev/null | grep "New MAC:" &> /dev/null && O3=1
-	ifconfig $WLANNM up && echo -e ""$YS"Done"$CE"" 
-	if [[ "$O1" = 1 && "$O2" = 1 && "$O3" = 1 && "$O4" = 1 ]]
-	then
-		BACKL=1
-	fi
+    mou_enable_monitor_picker
 }
+
+
+
 function stop_menu
 {
 	O1=0
@@ -6745,28 +8957,11 @@ function stop_menu
 }
 function stop_monitor
 {
-	echo -e "Disabling $WLANNM..."
-	echo -e "Stopping monitor mode..."
-	if [[ "$ALFA" = "yes" ]]
-	then
-		A1=0
-		A2=0
-		A3=0
-		ifconfig $WLANN down && A1=1
-		iwconfig $WLANN mode managed && A2=1
-		ifconfig $WLANN up && A3=1
-		if [[ "$A1" = 1 && "$A2" = 1 && "$A3" = 1 ]]
-		then
-			echo -e ""$YS"Done"$CE"" && O2=1
-		else
-			echo -e ""$RS"Error stoping monitor mode."$CE""
-		fi
-	else
-		airmon-ng stop $WLANNM &>/dev/null && echo -e ""$YS"Done"$CE"" && O2=1 || echo -e ""$RS"Error stoping monitor mode."$CE""
-	fi
-	echo -e "Starting network-manager service..."
-	service network-manager start && echo -e ""$YS"Done"$CE"" && O3=1 || echo -e ""$RS"Error starting network-manager service"$CE""
+    mou_disable_monitor_auto
 }
+
+
+
 function spoof_email
 {
 while true
@@ -7677,7 +9872,7 @@ function cromos_menu
 			TERMINALTITLE="CROMOS MENU"
 			dash_calc
 			printf '\033]2;CROMOS MENU\a'
-			if [[ "$CEX" == "" ]]
+			if [[ "${CE}X" == "" ]]
 			then
 				CEX="None"
 			fi
@@ -7685,7 +9880,7 @@ function cromos_menu
 			then
 				CMOD="keylogger"
 			fi
-			echo -e " Current extension: "$RS"$CEX"$CE""
+			echo -e " Current extension: "$RS"${CE}X"$CE""
 			echo -e " "$YS"1"$CE") Download/select an extension"
 			echo -e " "$YS"2"$CE") Choose module                     "$YS"$CMOD"$CE""
 			echo -e " "$YS"3"$CE") Infect"
@@ -9370,6 +11565,238 @@ function undetectable1
 }
 function main_options
 {
+
+
+
+    # MOU_FINAL_ANONYMITY_GUARD
+    if [[ "$YORNAA" = "4" ]]
+    then
+        mou_enable_anonym8_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d4" ]]
+    then
+        mou_disable_anonym8_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "5" ]]
+    then
+        mou_enable_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d5" ]]
+    then
+        mou_disable_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "45" ]]
+    then
+        mou_enable_both_anonymity_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d45" ]]
+    then
+        mou_disable_both_anonymity_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "6" ]]
+    then
+        mou_show_anonymity_status_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d6" ]]
+    then
+        mou_restart_both_anonymity_action
+        return
+    fi
+
+
+    # MOU_SPEEDTEST_INLINE_GUARD
+    if [[ "$YORNAA" = "st" ]]
+    then
+        mou_speedtest_inline
+        return
+    fi
+
+
+    # MOU_BANDWIDTH_INLINE_GUARD
+    if [[ "$YORNAA" = "22" ]]
+    then
+        mou_show_bandwidth_inline
+        return
+    fi
+
+
+    # MOU_COMBINED_ANONYMITY_GUARD
+    if [[ "$YORNAA" = "4" ]]
+    then
+        mou_enable_anonym8_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d4" ]]
+    then
+        mou_disable_anonym8_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "5" ]]
+    then
+        mou_enable_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d5" ]]
+    then
+        mou_disable_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "45" ]]
+    then
+        mou_enable_both_anonymity_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d45" ]]
+    then
+        mou_disable_both_anonymity_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "6" ]]
+    then
+        mou_show_anonymity_status_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d6" ]]
+    then
+        mou_restart_both_anonymity_action
+        return
+    fi
+
+
+    # MOU_COMBINED_ANONYMITY_GUARD
+    if [[ "$YORNAA" = "4" ]]
+    then
+        mou_enable_anonym8_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d4" ]]
+    then
+        mou_disable_anonym8_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "5" ]]
+    then
+        mou_enable_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d5" ]]
+    then
+        mou_disable_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "45" ]]
+    then
+        mou_enable_both_anonymity_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d45" ]]
+    then
+        mou_disable_both_anonymity_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "6" ]]
+    then
+        mou_show_anonymity_status_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d6" ]]
+    then
+        mou_restart_both_anonymity_action
+        return
+    fi
+
+
+    # MOU_ANONSURF_MENU_GUARD
+    if [[ "$YORNAA" = "5" ]]
+    then
+        mou_enable_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d5" ]]
+    then
+        mou_disable_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d6" ]]
+    then
+        mou_restart_anonsurf_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "6" ]]
+    then
+        return
+    fi
+
+
+    # MOU_ANONYM8_MENU_GUARD
+    if [[ "$YORNAA" = "4" ]]
+    then
+        mou_enable_anonym8_action
+        return
+    fi
+
+    if [[ "$YORNAA" = "d4" ]]
+    then
+        mou_disable_anonym8_action
+        return
+    fi
+
+
+    # MOU_DYNAMIC_WIFI_GUARD
+    if [[ "$YORNAA" = "1" ]]
+    then
+        mou_manage_wireless_cards
+        return
+    fi
+
+    if [[ "$YORNAA" = "2" ]]
+    then
+        mou_enable_monitor_picker
+        return
+    fi
+
+    if [[ "$YORNAA" = "d2" ]]
+    then
+        mou_disable_monitor_auto
+        return
+    fi
+
+    if [[ "$YORNAA" = "start" || "$YORNAA" = "stop" || "$YORNAA" = "ks" || "$YORNAA" = "d" ]]
+    then
+        return
+    fi
+
 	if [[ "$YORNAA" = "0" ]]
 	then
 		exit
@@ -9511,10 +11938,12 @@ then
 		service postgresql stop && echo -e ""$YS"Done"$CE"" || echo -e ""$RS"Error"$CE""
 	elif [[ "$YORNAA" = "nstart" ]]
 	then
-		service network-manager start && echo -e ""$YS"Done"$CE"" || echo -e ""$RS"Error"$CE""
+	        echo -e ""$YS"Network service control disabled to protect LAN/RDP connection."$CE""
+	        sleep 2
 	elif [[ "$YORNAA" = "nstop" ]]
 	then
-		service network-manager stop && echo -e ""$YS"Done"$CE"" || echo -e ""$RS"Error"$CE""
+	        echo -e ""$YS"Network service control disabled to protect LAN/RDP connection."$CE""
+	        sleep 2
 	elif [[ "$YORNAA" = "astart" ]]
 	then
 		service apache2 start && echo -e ""$YS"Done"$CE"" || echo -e ""$RS"Error"$CE""
@@ -9544,7 +11973,7 @@ then
 	then
 		BACKL="1"
 		spoof_email
-	elif [[ "$YORNAA" = "ks" ]]
+	elif [[ "$YORNAA" = "__removed_ks__" ]]
 	then
 		keyboard_shortcuts
 	elif [[ "$YORNAA" = "interface" ]]
@@ -9801,11 +12230,11 @@ then
 				install_wifiphisher
 			fi
 		fi
-	elif [[ "$YORNAA" = "start" ]]
+	elif [[ "$YORNAA" = "__removed_start__" ]]
 	then		
 		start_menu
 #----------
-	elif [[ "$YORNAA" = "stop" ]]
+	elif [[ "$YORNAA" = "__removed_stop__" ]]
 	then
 		stop_menu
 	elif [[ "$YORNAA" = "exit" ]]
@@ -9930,7 +12359,7 @@ check_if_ks
 	function install_trity
 	{
 		foldname="Trity"
-		gitlink="https://github.com/toxic-ig/Trity.git"
+		gitlink="https://github.com/dani16antonio/Trity.git"
 		install_default
 		cloned=$?
 		if [[ "$cloned" == 1 ]]
@@ -10011,17 +12440,14 @@ check_if_ks
 			chmod +x TheEye	
 		fi
 	}
-	function install_xerxes
-	{
-		foldname="xerxes"
-		gitlink="https://github.com/zanyarjamal/xerxes.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			gcc xerxes.c -o xerxes	
-		fi
-	}
+        function install_xerxes
+        {
+                clear
+                echo -e "\033[1;31m[!] Xerxes is disabled.\033[0m"
+                echo -e "\033[1;33m[i] This is a DoS/DDoS tool, so MScript will not install it.\033[0m"
+                echo -e "\033[1;33m[i] Use authorized recon/scanning tools instead.\033[0m"
+                sleep 2
+        }
 	function install_mdk3
 	{
 		foldname="mdk3-master"
@@ -10034,18 +12460,95 @@ check_if_ks
 			make install
 		fi
 	}
-	function install_katana
-	{
-		foldname="KatanaFramework"
-		gitlink="https://github.com/PowerScript/KatanaFramework.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			sh dependencies
-			python install
-		fi
-	}
+  function install_katana
+  {
+          clear
+
+          echo -e "\033[1;36mKatana Framework installer\033[0m"
+          echo
+
+          if ! command -v python2 >/dev/null 2>&1
+          then
+                  echo -e "\033[1;31m[!] Python 2.7 was not found.\033[0m"
+                  echo -e "\033[1;33m[!] Katana is a legacy Python 2 project and is not compatible with Python 3.13.\033[0m"
+                  echo
+                  echo -e "\033[1;33mInstallation stopped to protect the Kali system Python environment.\033[0m"
+                  echo
+                  read -r -n 1 -p "Press any key to return..."
+                  echo
+                  return 1
+          fi
+
+          foldname="KatanaFramework"
+          gitlink="https://github.com/PowerScript/KatanaFramework.git"
+
+          install_default
+          cloned=$?
+
+          if [[ "$cloned" == 1 ]]
+          then
+                  local shim_dir
+                  local dependency_result
+                  local install_result
+
+                  shim_dir="$(mktemp -d)"
+
+                  if [[ ! -d "$shim_dir" ]]
+                  then
+                          echo -e "\033[1;31m[!] Failed to create temporary directory.\033[0m"
+                          return 1
+                  fi
+
+                  ln -s "$(command -v python2)" "$shim_dir/python"
+
+                  echo
+                  echo -e "\033[1;36m[*] Installing Katana dependencies with Python 2...\033[0m"
+
+                  PATH="$shim_dir:$PATH" sh dependencies
+                  dependency_result=$?
+
+                  if [[ "$dependency_result" -ne 0 ]]
+                  then
+                          echo
+                          echo -e "\033[1;31m[!] Katana dependency installation failed.\033[0m"
+                          rm -rf "$shim_dir"
+                          read -r -n 1 -p "Press any key to return..."
+                          echo
+                          return 1
+                  fi
+
+                  echo
+                  echo -e "\033[1;36m[*] Running the Katana installer with Python 2...\033[0m"
+
+                  PATH="$shim_dir:$PATH" python2 install
+                  install_result=$?
+
+                  rm -rf "$shim_dir"
+
+                  if [[ "$install_result" -ne 0 ]]
+                  then
+                          echo
+                          echo -e "\033[1;31m[!] Katana installation failed.\033[0m"
+                          read -r -n 1 -p "Press any key to return..."
+                          echo
+                          return 1
+                  fi
+
+                  if command -v ktf.console >/dev/null 2>&1 &&
+                     [[ -d "/usr/share/KatanaFramework" ]]
+                  then
+                          echo
+                          echo -e "\033[1;32m[+] Katana installation completed successfully.\033[0m"
+                  else
+                          echo
+                          echo -e "\033[1;31m[!] Installation finished, but ktf.console was not created.\033[0m"
+                          echo -e "\033[1;33m[!] Katana may still be incompatible with this Kali version.\033[0m"
+                          read -r -n 1 -p "Press any key to return..."
+                          echo
+                          return 1
+                  fi
+          fi
+  }
 	function install_airgeddon
 	{
 		foldname="airgeddon"
@@ -10721,16 +13224,13 @@ function install_howdoi
 		apt-get -y install arp-scan
 	}
 	function install_netool
-	{
-		foldname="opensource"
-		gitlink="https://github.com/r00t-3xp10it/netool-toolkit"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			chmod +x INSTALL.sh && ./INSTALL.sh
-		fi
-	}
+{
+    mou_run_netool_toolkit
+}
+
+
+
+
 	function install_sqlmap
 	{
 		apt-get install sqlmap
@@ -11155,6 +13655,14 @@ function install_wifipumpkin
 function install_wifipumpkin3
 {
         install_wifi-pumpkin
+}
+
+
+function install_socialfish
+{
+        echo -e ""$RS"SocialFish is disabled."$CE""
+        echo -e ""$YS"This tool is associated with phishing/credential harvesting and will not be installed by mscript."$CE""
+        sleep 3
 }
 
 

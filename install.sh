@@ -1,37 +1,33 @@
 #!/usr/bin/env bash
-set -e
 
-if [ "$(id -u)" -ne 0 ]; then
-    echo "Restarting installer with sudo..."
-    exec sudo bash "$0" "$@"
+set -euo pipefail
+
+if [[ "$(id -u)" -ne 0 ]]; then
+    exec sudo -E bash "$0" "$@"
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MAIN_SCRIPT="$REPO_DIR/m"
 
-if [ ! -f "$SCRIPT_DIR/m" ]; then
-    echo "ERROR: m file not found in $SCRIPT_DIR"
+[[ -f "$MAIN_SCRIPT" ]] || {
+    echo "ERROR: $MAIN_SCRIPT not found." >&2
     exit 1
-fi
+}
 
-bash -n "$SCRIPT_DIR/m"
+bash -n "$MAIN_SCRIPT"
+chmod 755 "$MAIN_SCRIPT"
 
 mkdir -p /bin/mscript /usr/bin/mscript /usr/local/bin
 
-install -m 755 "$SCRIPT_DIR/m" /bin/mscript/m
-install -m 755 "$SCRIPT_DIR/m" /usr/bin/mscript/m
+# Link installed commands directly to the repository
+ln -sfn "$MAIN_SCRIPT" /bin/mscript/m
+ln -sfn "$MAIN_SCRIPT" /usr/bin/mscript/m
 
-[ -f "$SCRIPT_DIR/Changelog" ] && install -m 644 "$SCRIPT_DIR/Changelog" /bin/mscript/Changelog
-[ -f "$SCRIPT_DIR/version.txt" ] && install -m 644 "$SCRIPT_DIR/version.txt" /bin/mscript/version.txt
-[ -f "$SCRIPT_DIR/README.md" ] && install -m 644 "$SCRIPT_DIR/README.md" /bin/mscript/README.md
-
-ln -sf /bin/mscript/m /usr/local/bin/m
-ln -sf /bin/mscript/m /usr/bin/m
-ln -sf /bin/mscript/m /bin/m 2>/dev/null || true
-
-chmod +x /bin/mscript/m /usr/bin/mscript/m
+ln -sfn /bin/mscript/m /usr/local/bin/m
+ln -sfn /bin/mscript/m /usr/bin/m
+ln -sfn /bin/mscript/m /bin/m
 
 echo
 echo "[OK] MOU Script installed"
-grep -n "VERSION=" /bin/mscript/m | head -1
-echo
-echo "Run with: m"
+echo "Source: $MAIN_SCRIPT"
+grep -n '^VERSION=' "$MAIN_SCRIPT" | head -1
