@@ -6210,6 +6210,7 @@ function remote_access
 		if [[ -d /root/koadic ]]
 		then
 			cd /root/koadic
+			chmod 755 ./koadic 2>/dev/null || true
 			./koadic
 		else
 			echo -e "$TNI"
