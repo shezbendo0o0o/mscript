@@ -1,6 +1,9 @@
 {new} - {date.today()}
 - Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
+
 v2.1.31 - ARM64 compatibility fixes
 {new} - {date.today()}
 - Auto release after change: {commit_msg}
