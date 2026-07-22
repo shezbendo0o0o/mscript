@@ -1,0 +1,117 @@
+name: Auto Release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release-master
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip release]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          from datetime import date
+          import re
+          import subprocess
+
+          version_file = Path("version.txt")
+
+          if version_file.exists():
+              old = version_file.read_text(errors="ignore").strip()
+          else:
+              m = Path("m").read_text(errors="ignore")
+              match = re.search(r"VERSION=([0-9]+\.[0-9]+\.[0-9]+)", m)
+              if not match:
+                  raise SystemExit("Could not detect current version")
+              old = match.group(1)
+
+          major, minor, patch = map(int, old.split("."))
+          new = f"{major}.{minor}.{patch + 1}"
+
+          commit_msg = subprocess.check_output(
+              ["git", "log", "-1", "--pretty=%s"],
+              text=True
+          ).strip()
+
+          # Update m
+          p = Path("m")
+          if p.exists():
+              s = p.read_text(errors="ignore")
+              s = re.sub(r"VERSION=[0-9]+\.[0-9]+\.[0-9]+", f"VERSION={new}", s)
+              s = s.replace(f"v{old}", f"v{new}")
+              p.write_text(s)
+
+          # Update README
+          p = Path("README.md")
+          if p.exists():
+              s = p.read_text(errors="ignore")
+              s = s.replace(f"v{old}", f"v{new}")
+              p.write_text(s)
+
+          # Update version file
+          version_file.write_text(new + "\n")
+
+          # Prepend changelog
+          p = Path("Changelog")
+          old_changelog = p.read_text(errors="ignore") if p.exists() else ""
+          entry = f"""{{new}} - {{date.today()}}
+          - Auto release after change: {{commit_msg}}
+
+          """
+          p.write_text(entry + old_changelog)
+
+          Path(".release_version").write_text(new)
+          print(new)
+          PY
+
+          VERSION=$(cat .release_version)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        run: |
+          VERSION="${{ steps.bump.outputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add m README.md Changelog version.txt
+          git commit -m "Bump version to v$VERSION [skip release]"
+
+          git tag -a "v$VERSION" -m "MOU Script v$VERSION"
+
+          git push origin HEAD:master
+          git push origin "v$VERSION"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.bump.outputs.version }}"
+
+          gh release create "v$VERSION" \
+            --title "MOU Script v$VERSION" \
+            --notes "Auto release for MOU Script v$VERSION
+
+          Changes:
+          - Auto-created after push to master.
+          - Version bumped automatically.
+          - See Changelog for details." \
+            --latest

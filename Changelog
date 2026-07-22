@@ -1,171 +1,78 @@
-2.1.5
-Remade installation menu, now you can select multiple tools at once.
-Fixed no output when handshake scanning.
-Fixed wifiphisher launch when only 1 interface available.
-Added option to select the entire network as target at auto-exploit browser menu.
-Angry IP updated.
-Fixed routersploit installation.
-Added new wififb menu that auto-saves captured credentials, triggered only via ks.
-Added new error for auto-fix, when pyrit handshake verification always is bad.
-Auto exiting deauth attack when specified num of deauths completed.
-Option to not ask for confirmation to remove and reinstall already installed tools.
-Improved "local IPs and gateways" feature.
-Added option to autocheck for handshake every x seconds.
-Added option to copy captured handshake to desktop after validating.
-Go to gateway's IP in browser by typing 'gate'.
-Added Yuki Chan to website tools.
-Fixed install.sh error in gnome-terminal command.
-Fixed airodump's \x00\x00\x00 bug on output when scanning. 
-Added default wififb names.
-Fixed fluxion's installation.
-Added option to test arp-scan IPs with eternalblue exploit.
-Fixed unlock WPS menu errors.
-Fixed Fluxion launch error due to latest fluxion version.
-Fixed Kwetza installation typo.
-Fixed many bugs, but not even half.
+v2.1.31 - ARM64 compatibility fixes
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
-2.1.4
-New WPS feature added: Pixie loop till pin found.
-New WPS feature added: Unlock WPS for APs with locked WPS.(beta)
-New feature: Bruteforce router's login password.
-Remade old WEP menu.
-Added option to re arp-scan network.
-Added option to show bandwidth via iftop tool.
-Fixed wash output if network has space in it.
-Improved geolocation feature.
-Fixed arp-scan error.
-Fixed major issue on handshake scan, sometimes APs disappearing.
-Fixed minor error in errors menu.
-Added description to information gathering tools.
-Improved descriptions on wifi tools.
-Added two options to validate handshake.
-Added netool-toolkit to wifi tools.
-Added website tools menu.
-Added Leviathan to website tools.
-Added VMR and Airgeddon to WPS menu.
-Added SQLmap automated script to website tools and banner.
-Added setting to change the interface for arp-scan feature.
-Added checking if interface available before scan.
-Added patator to other tools.
-Added Evil-Droid to remote access tools and keyboard shortcuts.
-Improved pixie dust loop attack.
-Added NoSQLMap to website tools and keyboard shortcuts.
-Added option in settings to change iftop's interface.
-Add e.g. to LHOST on eternalblue.
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
-2.1.3
-Added Geolocate IP feature.
-Added fully automatic beef + mitmf browser injection.
-Added automated local IPs & gateways print feature.
-Added Beef to remote access tools and keyboard shortcuts.
-Added option to verify the handshake with pyrit too from deauth menu.
-Added option to deauth all, wait and loop.
-Added ngrok installation option from main menu.
-Fixed error when going back from creating a keyboard shortcut.
-Fixed angry ip scanner keyboard shortcut.
-Changed to new gnome-terminal command.
-Added delay option to WPS bruteforce and fixed errors.
-Added red color when WPS is locked on an AP.
-Added error message when selecting a WPS-locked AP.
-Added setting to enable --ingore-negative-one in deauthing.
-Added option to manually type a MAC to deauth.
-Added return when starting/stopping services.
-Added choosing if you want to keep a bad handshake.
-Added cowpatty handshake check on deauth.
-Added setting to specify another MAC address for when starting monitor.
-Added samples to banner's changing color option in settings.
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
-2.1.1
-Fixed interfaces not saved after update.
-Fixed Terms of use not saved after update.
-Added delay after cupp wordlist generation.
-Fixed tool's installation in WPS menu.
-Added Gloom-Framework to wifi tools and keyboard shortcuts.
-Check handshake name if already exists.
-Added handshake check option in deauth menu.	
-Added automated install of nWatch requirements due to error reports.
-Added Arcanus to wifi tools and keyboard shortcuts.
-Added automated MSFPC script to remote access tools.
-Added automated morphHTA script to remote access tools.
-Added LFISuite to remote access tools and keyboard shortcuts.
-Added automated UniByAv script to remote access.
-Added automated demiguise script to remote access.
-Added DKMC to remote access tools and keyboard shortcuts.
-Added SecHub to wifi tools and keyboard shortcuts.
-Added color to pyrit handshake validation output.
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
-2.1.0
-Fixed error in deauth when selecting a non existing station number.
-Fixed error when checking if monitor enabled.
-Added support for ALFA AWUS036ACH when checking if monitor enabled.
-Added Koadic tool to remote access and keyboard shortcuts.
-Added Empire tool to remote access and keyboard shortcuts.
-Added Meterpreter_Paranoid_Mode tool to remote access and keyboard shortcuts.
-Added Dr0p1t-Framework tool.
-Added Dr0p1t-Framework automation script to remote access.
-Added Wifi-Pumpkin in wifi tools and keyboard shortcuts.
-Added Veil in remote access tools and keyboard shortcuts.
-Added Leviathan in remote access tools and keyboard shortcuts.
-Added FakeImageExploiter to remote access tools.
-Added Avet to remote access tools.
-Added complete fix for apache2 failed to start error.
-Added latest changelog view at every update.
-Fixed no shortcuts saving after update error.
-Fixed settings not saved after update.
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
-2.0.9
-Fixed error in handshake menu line 59.
-Added Findsploit to metasploit menu.
-Fixed minor mistakes with handshake menu.
-Handshake deauth improved.
-Added auto-sorting of connected clients in deauth.
-Added option to select which client to disconnect.
-Added blue color for WEP ap's on handshake menu.
-Added option to check multiple hosts for eternalblue.
-Fixed minor issue with ngrok.
-Fixed 'Found -6 clients error' in deauth.
-Fixed 'No networks found' after unsuccessful capture.
-Added Howdoi tool in banner.
-Added automated Howdoi settings in settings menu.
-Added operative-framework to information gathering tools.
-Improved AP select in handshake menu(-le -ge).
-Added support for ALFA AWUS036ACH wireless USB adapter.
-Added netattack2 to wifi tools.
-Added operative-framework and netattack2 to keyboard shortcuts.
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
-2.0.8
-Removed delay from donation menu to main menu.
-Added option to change logo color in settings.
-Fixed typo in keyboard shortcuts.
-Added delay in info tools.
-Fixed error in keyboard shortcuts line 4028.
-Fixed error file not found in handshake menu.
-Fixed error when launching cupp.
-Added bleachbit to other tools + to installation menu.
-Added VMR MDK in wifi tools + to installation menu.
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
-2.0.7
-Improved start/stop options.
-+Added color to 'Done'.
-+Removed delay if everything is ok.
-Added nessus start/stop (if you have it already installed).
-Added new fix to errors menu.
-Fixed huge error with new installation method.
+{new} - {date.today()}
+- Auto release after change: {commit_msg}
 
+2.1.7 - 2026-07-11
+- Fixed author name to Moamen Alsayed.
+- Synced installed version with GitHub version.
+- Added MouGather to Information Gathering menu.
+- Added MouGather to install/reinstall tools list.
+- Replaced broken Howdoi with cheat.sh search.
+- Fixed runtime path issues for non-root installs.
+- Fixed installer behavior for newer Kali/headless systems.
+- Fixed update checker repo URL.
 
+<<<<<<< HEAD
 
 2.0.6
 Added Kwetza (payload to apk) to remote access tools.
@@ -429,3 +336,5 @@ added wash error on error-fixing (type "errors")
 0.2
 Added ghost phisher tool
 v2.1.31 - ARM64 compatibility fixes
+=======
+>>>>>>> 6c08bd28918cdf53ab9451f37adfce36d965812d
