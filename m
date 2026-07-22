@@ -7,7 +7,7 @@ IAGREE_FILE="${MSCRIPT_STATE_DIR}/IAGREE.txt"
 
 
 # set -x
-VERSION=2.1.23
+VERSION=2.1.30
 #Number of tools with keyboard shortcut support
 HOWMANYTOOLS=53
 BACKL="0"
@@ -2662,7 +2662,7 @@ function listshortcuts
 		KSSET="ghost-phisher"
 	elif [[ "$nn" = "14" ]]
 	then
-		TITLE="Xerxes"
+		TITLE="xerxes"
 		NAMECD="cd /root/xerxes"
 		KSSET="./xerxes"
 	elif [[ "$nn" = "15" ]]
@@ -2859,7 +2859,7 @@ function listshortcuts
 	then
 		TITLE="SocialFish"
 		NAMECD="cd /root/SocialFish"
-		KSSET="python SocialFish.py"
+		KSSET="socialfish"
 	elif [[ "$nn" = "53" ]]
 	then
 		TITLE="Yuki-Chan-The-Auto-Pentest"
@@ -5240,11 +5240,11 @@ function wifi_tools
 	else
 		echo -e ""$RS"14"$CE") "$RS"The Eye"$CE"               Detects ARP poisoning DNS spoofing etc..."
 	fi
-	if [[ -d /root/xerxes ]]
-	then	
-		echo -e ""$YS"15"$CE") Xerxes                Disabled - DoS/DDoS tool"
+	if [ -x /home/moupi/MOUD/moud ]
+	then
+	   printf "%b%2s%b) %-22s%s\n" "$YS" "15" "$CE" "xerxes" "The most powerful DoS tool(CAUTION)"
 	else
-		echo -e ""$RS"15"$CE") "$RS"Xerxes"$CE"                The most powerful DoS tool(CAUTION)"
+	   printf "%b%2s%b) %b%-22s%b%s\n" "$RS" "15" "$CE" "$RS" "xerxes" "$CE" "The most powerful DoS tool(CAUTION)"
 	fi
 	if command -v ktf.console >/dev/null 2>&1 && [[ -d /usr/share/KatanaFramework ]]
 	then
@@ -5338,9 +5338,9 @@ function wifi_tools
 	fi
 	if [[ -d /root/HT-WPS-Breaker ]]
 	then
-		echo -e ""$YS"31"$CE") HT-WPS-Breaker            High Touch WPS Breaker"
+		printf "%b%2s%b) %-22s%s\n" "$YS" "31" "$CE" "HT-WPS-Breaker" "High Touch WPS Breaker"
 	else
-		echo -e ""$RS"31"$CE") "$RS"HT-WPS-Breaker"$CE"            High Touch WPS Breaker"
+		printf "%b%2s%b) %b%-22s%b%s\n" "$RS" "31" "$CE" "$RS" "HT-WPS-Breaker" "$CE" "High Touch WPS Breaker"
 	fi
 	echo -e ""$YS" b"$CE") Go back"
 	echo -e ""$YS"00"$CE") Main menu"
@@ -5591,7 +5591,7 @@ function wifi_tools
 		if [[ -d "/root/The-Eye" ]]
 		then
 			cd /root/The-Eye
-			./TheEye
+			theeye
 			cd
 		else
 			echo -e "$TNI"
@@ -5603,14 +5603,16 @@ function wifi_tools
 				continue
 			fi
 		fi
-        elif [[ "$APPP" = "15" ]]
-        then
-                clear
-                echo -e "\033[1;31m[!] Xerxes is disabled.\033[0m"
-                echo -e "\033[1;33m[i] This is a DoS/DDoS tool, so MScript will not install or run it.\033[0m"
-                echo -e "\033[1;33m[i] Use authorized recon/scanning tools instead.\033[0m"
-                sleep 3
-                continue
+	elif [[ "$APPP" = "15" ]]
+	then
+		clear
+		echo -e "[1;36m=== XERXES Tool Launcher ===[0m"
+		read -p "Enter website/IP: " target
+		read -p "Enter port: " port
+		echo -e "[1;32mRunning Xerxes: ./moud $target $port[0m"
+		cd /home/moupi/MOUD && ./moud "$target" "$port"
+		echo ""
+		read -p "Press [Enter] to return to menu..."
 	elif [[ "$APPP" = "16" ]]
 	then
 		if command -v ktf.console >/dev/null 2>&1 && [[ -d "/usr/share/KatanaFramework" ]]
@@ -5862,7 +5864,7 @@ function wifi_tools
 		if [[ -d "/root/SocialFish" ]]
 		then
 			cd /root/SocialFish
-			python SocialFish.py
+			socialfish
 		else
 			echo -e "$TNI"
 			read INSTALL
@@ -6208,6 +6210,7 @@ function remote_access
 		if [[ -d /root/koadic ]]
 		then
 			cd /root/koadic
+			chmod 755 ./koadic 2>/dev/null || true
 			./koadic
 		else
 			echo -e "$TNI"
@@ -7321,6 +7324,18 @@ function information_gathering
 		fi
                 echo -e ""$YS" 9"$CE") Shodan               Internet-exposed assets search."
                 echo -e ""$YS"10"$CE") Maltego              OSINT link analysis GUI."
+   if [[ -x /usr/local/bin/gosearch ]]
+   then
+           printf "%b%2s%b) %-20s%s\n" "$YS" "11" "$CE" "GoSearch" "Search usernames across many websites"
+   else
+           printf "%b%2s%b) %b%-20s%b%s\n" "$RS" "11" "$CE" "$RS" "GoSearch" "$CE" "Search usernames across many websites"
+   fi
+   if command -v phoneintel >/dev/null 2>&1
+   then
+           printf "%b%2s%b) %-20s%s\n" "$YS" "12" "$CE" "PhoneIntel" "Analyze phone numbers using public OSINT data"
+   else
+           printf "%b%2s%b) %b%-20s%b%s\n" "$RS" "12" "$CE" "$RS" "PhoneIntel" "$CE" "Analyze phone numbers using public OSINT data"
+   fi
 		echo -e ""$YS" b"$CE") Go back"
 		echo -e ""$YS"00"$CE") Main menu"
 		echo -e "Choose: "
@@ -7423,6 +7438,93 @@ function information_gathering
                         echo
                         echo -e "Press any key to continue"
                         read -n 1
+                        continue
+                fi
+
+
+                if [[ "$INFOG" = 11 ]]
+                then
+                        clear
+                        echo -e "\033[1;36mGoSearch\033[0m"
+                        echo -e "\033[1;33mSearch usernames across many websites.\033[0m"
+                        echo
+
+                        if [[ ! -x /usr/local/bin/gosearch ]]
+                        then
+                                echo -e "\033[1;31m[!] GoSearch is not installed.\033[0m"
+                                echo
+                                echo "Install it with:"
+                                echo "sudo env GOBIN=/usr/local/bin go install github.com/ibnaleem/gosearch@latest"
+                                echo
+                                echo "Press any key to continue"
+                                read -r -n 1 -s
+                                echo
+                                continue
+                        fi
+
+                        read -r -p "Username: " GOSEARCH_USERNAME
+                        echo
+
+                        if [[ -z "$GOSEARCH_USERNAME" ]]
+                        then
+                                echo -e "\033[1;31m[!] Username cannot be empty.\033[0m"
+                        else
+                                /usr/local/bin/gosearch \
+                                        -u "$GOSEARCH_USERNAME" \
+                                        --no-false-positives
+                        fi
+
+                        echo
+                        echo "Press any key to continue"
+                        read -r -n 1 -s
+                        echo
+                        continue
+                fi
+
+
+                if [[ "$INFOG" = 12 ]]
+                then
+                        clear
+                        echo -e "\033[1;36mPhoneIntel\033[0m"
+                        echo -e "\033[1;33mAnalyze a phone number using public OSINT data.\033[0m"
+                        echo
+
+                        read -r -p "Phone number with country code, example +201001234567: " PHONEINTEL_INPUT
+                        echo
+
+                        if [[ "$PHONEINTEL_INPUT" = "b" ||
+                              "$PHONEINTEL_INPUT" = "B" ]]
+                        then
+                                continue
+                        fi
+
+                        PHONE_DIGITS="$(
+                                printf '%s' "$PHONEINTEL_INPUT" |
+                                tr -cd '0-9'
+                        )"
+
+                        if [[ ! "$PHONE_DIGITS" =~ ^[0-9]{7,15}$ ]]
+                        then
+                                echo -e "\033[1;31m[!] Enter a valid international phone number.\033[0m"
+                        elif [[ -x /usr/local/bin/phoneintel ]]
+                        then
+                                /usr/local/bin/phoneintel \
+                                        --info "+$PHONE_DIGITS"
+                        elif command -v phoneintel >/dev/null 2>&1
+                        then
+                                phoneintel \
+                                        --info "+$PHONE_DIGITS"
+                        else
+                                echo -e "\033[1;31m[!] PhoneIntel is not installed.\033[0m"
+                                echo
+                                echo "Expected command:"
+                                echo "/usr/local/bin/phoneintel"
+                        fi
+
+                        echo
+                        echo "Press any key to continue"
+                        read -r -n 1 -s
+                        echo
                         continue
                 fi
 
@@ -12931,18 +13033,105 @@ function install_howdoi
 		gitlink="https://github.com/chrizator/netattack2.git"
 		install_default
 	}
-	function install_koadic
-	{
-		foldname="koadic"
-		gitlink="https://github.com/zerosum0x0/koadic.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			pip install -r requirements.txt
-			pip2.7 install -r requirements.txt
-		fi
-	}
+function install_koadic
+{
+        foldname="koadic"
+        gitlink="https://github.com/offsecginger/koadic.git"
+
+        install_default
+        cloned=$?
+
+        if [[ "$cloned" == 1 ]]
+        then
+                echo -e "${YS}Installing Koadic Python 3 environment...${CE}"
+
+                apt-get update
+
+                DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                        python3 \
+                        python3-pip \
+                        python3-venv \
+                        python3-dev \
+                        build-essential \
+                        libffi-dev \
+                        libssl-dev
+
+                if [[ ! -f requirements.txt ]]
+                then
+                        echo -e "${RS}requirements.txt was not found.${CE}"
+                        return 1
+                fi
+
+                awk '
+                BEGIN {
+                        IGNORECASE=1
+                }
+
+                /^[[:space:]]*pycrypto([<>=!~].*)?[[:space:]]*$/ {
+                        print "pycryptodome"
+                        next
+                }
+
+                {
+                        print
+                }
+                ' requirements.txt > requirements-python3.txt
+
+                rm -rf .venv
+
+                python3 -m venv .venv
+
+                .venv/bin/python -m pip install --upgrade \
+                        pip \
+                        setuptools \
+                        wheel
+
+                if ! .venv/bin/python -m pip install \
+                        --no-cache-dir \
+                        -r requirements-python3.txt
+                then
+                        echo -e "${RS}Koadic dependency installation failed.${CE}"
+                        return 1
+                fi
+
+                if [[ -f koadic && ! -f koadic.py ]]
+                then
+                        mv koadic koadic.py
+                fi
+
+                if [[ ! -f koadic.py ]]
+                then
+                        echo -e "${RS}Koadic launcher was not found.${CE}"
+                        return 1
+                fi
+
+                cat > koadic <<'KOADIC_RUNNER'
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+KOADIC_DIR="$(
+        cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+        pwd
+)"
+
+cd "$KOADIC_DIR"
+
+exec "$KOADIC_DIR/.venv/bin/python" \
+        "$KOADIC_DIR/koadic.py" "$@"
+KOADIC_RUNNER
+
+                chmod 755 koadic
+
+                if ./koadic --help >/dev/null 2>&1
+                then
+                        echo -e "${GNS}Koadic installed successfully using Python 3.${CE}"
+                else
+                        echo -e "${YS}Koadic was installed, but its startup test returned an error.${CE}"
+                fi
+        fi
+}
+
 	function install_empire
 	{
 		foldname="Empire"
@@ -13064,17 +13253,18 @@ function install_howdoi
 		gitlink="https://github.com/D35m0nd142/LFISuite.git"
 		install_default
 	}
-	function install_unibyav
-	{
-		foldname="UniByAv"
-		gitlink="https://github.com/Mr-Un1k0d3r/UniByAv.git"
-		install_default
-		cloned=$?
-		if [[ "$cloned" == 1 ]]
-		then
-			apt-get install -y mingw-w64
-		fi
-	}
+function install_unibyav
+{
+        clear
+        echo -e "${RS}UniByAv installation is disabled in this build.${CE}"
+        echo -e ""
+        echo -e "The configured upstream repository is unavailable,"
+        echo -e "and this component is not maintained by MOU Script."
+        echo -e ""
+        echo -e "$PAKTGB"
+        $READAK
+}
+
 	function install_demiguise
 	{
 		foldname="demiguise"
