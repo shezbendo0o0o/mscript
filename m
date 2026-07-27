@@ -7,7 +7,7 @@ IAGREE_FILE="${MSCRIPT_STATE_DIR}/IAGREE.txt"
 
 
 # set -x
-VERSION=2.1.37
+VERSION=$(cat /bin/mscript/version.txt 2>/dev/null || echo "2.1.35")
 #Number of tools with keyboard shortcut support
 HOWMANYTOOLS=53
 BACKL="0"
@@ -5988,6 +5988,287 @@ function wifi_tools
 
 
 
+# ===================== DROIDHUNTER =====================
+
+function install_droidhunter
+{
+        clear
+        echo
+        echo -e ""$BS"Installing DroidHunter..."$CE""
+        echo
+
+        DROIDHUNTER_DIR="/opt/DroidHunter"
+        DROIDHUNTER_REPO="https://github.com/hexsecteam/DroidHunter.git"
+
+        # Install only missing system dependencies.
+        DROIDHUNTER_PACKAGES=()
+
+        command -v git >/dev/null 2>&1 || \
+                DROIDHUNTER_PACKAGES+=("git")
+
+        command -v python3 >/dev/null 2>&1 || \
+                DROIDHUNTER_PACKAGES+=("python3")
+
+        dpkg -s python3-venv >/dev/null 2>&1 || \
+                DROIDHUNTER_PACKAGES+=("python3-venv")
+
+        dpkg -s python3-pip >/dev/null 2>&1 || \
+                DROIDHUNTER_PACKAGES+=("python3-pip")
+
+        command -v adb >/dev/null 2>&1 || \
+                DROIDHUNTER_PACKAGES+=("adb")
+
+        if [[ "${#DROIDHUNTER_PACKAGES[@]}" -gt 0 ]]
+        then
+                echo -e ""$YS"Installing required system packages..."$CE""
+                echo
+
+                # Do not stop immediately if an unrelated repository
+                # causes apt update to fail. Existing package indexes
+                # may still allow installation.
+                apt-get update || \
+                        echo -e ""$YS"Warning: apt update reported an error; continuing with available indexes."$CE""
+
+                if ! DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                        "${DROIDHUNTER_PACKAGES[@]}"
+                then
+                        echo
+                        echo -e ""$RS"Failed to install DroidHunter system requirements."$CE""
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+        fi
+
+        echo
+        echo -e ""$YS"Downloading/updating DroidHunter..."$CE""
+
+        if [[ -d "$DROIDHUNTER_DIR/.git" ]]
+        then
+                if ! git -C "$DROIDHUNTER_DIR" pull --ff-only
+                then
+                        echo
+                        echo -e ""$RS"Could not update DroidHunter."$CE""
+                        echo "The existing installation was not removed."
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+
+        elif [[ -e "$DROIDHUNTER_DIR" ]]
+        then
+                DROIDHUNTER_OLD="${DROIDHUNTER_DIR}.backup-$(date +%Y%m%d-%H%M%S)"
+
+                mv "$DROIDHUNTER_DIR" "$DROIDHUNTER_OLD"
+
+                echo -e ""$YS"Existing directory backed up to:"$CE""
+                echo "$DROIDHUNTER_OLD"
+
+                if ! git clone "$DROIDHUNTER_REPO" "$DROIDHUNTER_DIR"
+                then
+                        echo
+                        echo -e ""$RS"Failed to clone DroidHunter."$CE""
+
+                        if [[ ! -e "$DROIDHUNTER_DIR" ]]
+                        then
+                                mv "$DROIDHUNTER_OLD" "$DROIDHUNTER_DIR"
+                        fi
+
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+
+        else
+                if ! git clone "$DROIDHUNTER_REPO" "$DROIDHUNTER_DIR"
+                then
+                        echo
+                        echo -e ""$RS"Failed to clone DroidHunter."$CE""
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+        fi
+
+        if [[ ! -f "$DROIDHUNTER_DIR/droidhunter.py" ]]
+        then
+                echo
+                echo -e ""$RS"droidhunter.py was not found."$CE""
+                read -n1 -s -r -p "Press any key to continue..."
+                return 1
+        fi
+
+        if [[ ! -f "$DROIDHUNTER_DIR/requirements.txt" ]]
+        then
+                echo
+                echo -e ""$RS"requirements.txt was not found."$CE""
+                read -n1 -s -r -p "Press any key to continue..."
+                return 1
+        fi
+
+        echo
+        echo -e ""$YS"Creating Python virtual environment..."$CE""
+
+        if [[ ! -x "$DROIDHUNTER_DIR/venv/bin/python" ]]
+        then
+                rm -rf "$DROIDHUNTER_DIR/venv"
+
+                if ! python3 -m venv "$DROIDHUNTER_DIR/venv"
+                then
+                        echo
+                        echo -e ""$RS"Failed to create the Python virtual environment."$CE""
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+        fi
+
+        echo
+        echo -e ""$YS"Installing Python dependencies..."$CE""
+
+        if ! "$DROIDHUNTER_DIR/venv/bin/python" -m pip install \
+                --upgrade pip setuptools wheel
+        then
+                echo
+                echo -e ""$RS"Failed to update Python packaging tools."$CE""
+                read -n1 -s -r -p "Press any key to continue..."
+                return 1
+        fi
+
+        if ! "$DROIDHUNTER_DIR/venv/bin/python" -m pip install \
+                -r "$DROIDHUNTER_DIR/requirements.txt"
+        then
+                echo
+                echo -e ""$RS"Failed to install DroidHunter dependencies."$CE""
+                read -n1 -s -r -p "Press any key to continue..."
+                return 1
+        fi
+
+        echo
+        echo -e ""$YS"Creating DroidHunter command..."$CE""
+
+        cat > /usr/bin/droidhunter <<'DROIDHUNTER_LAUNCHER'
+#!/bin/bash
+
+DROIDHUNTER_DIR="/opt/DroidHunter"
+DROIDHUNTER_PYTHON="$DROIDHUNTER_DIR/venv/bin/python"
+DROIDHUNTER_SCRIPT="$DROIDHUNTER_DIR/droidhunter.py"
+
+if [[ ! -x "$DROIDHUNTER_PYTHON" ]]
+then
+        echo "DroidHunter Python environment was not found."
+        exit 1
+fi
+
+if [[ ! -f "$DROIDHUNTER_SCRIPT" ]]
+then
+        echo "DroidHunter script was not found."
+        exit 1
+fi
+
+cd "$DROIDHUNTER_DIR" || exit 1
+
+if [[ "$#" -eq 0 ]]
+then
+        exec "$DROIDHUNTER_PYTHON" \
+                "$DROIDHUNTER_SCRIPT" \
+                --interactive
+else
+        exec "$DROIDHUNTER_PYTHON" \
+                "$DROIDHUNTER_SCRIPT" \
+                "$@"
+fi
+DROIDHUNTER_LAUNCHER
+
+        chmod 755 /usr/bin/droidhunter
+        ln -sf /usr/bin/droidhunter /usr/local/bin/droidhunter
+        hash -r
+
+        echo
+        echo -e ""$GS"DroidHunter installed successfully."$CE""
+        echo
+        echo "Installation: $DROIDHUNTER_DIR"
+        echo "Command: /usr/bin/droidhunter"
+        echo
+
+        read -n1 -s -r -p "Press any key to continue..."
+        return 0
+}
+
+
+function run_droidhunter
+{
+        DROIDHUNTER_DIR="/opt/DroidHunter"
+        DROIDHUNTER_PYTHON="$DROIDHUNTER_DIR/venv/bin/python"
+        DROIDHUNTER_SCRIPT="$DROIDHUNTER_DIR/droidhunter.py"
+
+        if [[ ! -x "$DROIDHUNTER_PYTHON" || ! -f "$DROIDHUNTER_SCRIPT" ]]
+        then
+                clear
+                echo
+                echo -e ""$YS"DroidHunter is not installed."$CE""
+                echo
+
+                read -r -p "Install DroidHunter now? [Y/n]: " \
+                        INSTALL_DROIDHUNTER_CHOICE
+
+                case "$INSTALL_DROIDHUNTER_CHOICE" in
+                        ""|y|Y|yes|YES|Yes)
+                                install_droidhunter
+                                ;;
+
+                        *)
+                                return
+                                ;;
+                esac
+        fi
+
+        # Verify installation again after the installer returns.
+        if [[ ! -x "$DROIDHUNTER_PYTHON" || ! -f "$DROIDHUNTER_SCRIPT" ]]
+        then
+                echo
+                echo -e ""$RS"DroidHunter installation was not completed."$CE""
+                echo
+                read -n1 -s -r -p "Press any key to continue..."
+                return
+        fi
+
+        # Recreate the global command if it is missing.
+        if [[ ! -x "/usr/bin/droidhunter" ]]
+        then
+                cat > /usr/bin/droidhunter <<'DROIDHUNTER_LAUNCHER'
+#!/bin/bash
+cd /opt/DroidHunter || exit 1
+exec /opt/DroidHunter/venv/bin/python \
+        /opt/DroidHunter/droidhunter.py \
+        "${@---interactive}"
+DROIDHUNTER_LAUNCHER
+
+                chmod 755 /usr/bin/droidhunter
+                ln -sf /usr/bin/droidhunter /usr/local/bin/droidhunter
+        fi
+
+        clear
+        echo
+        echo -e ""$BS"Starting DroidHunter..."$CE""
+        echo
+
+        cd "$DROIDHUNTER_DIR" || return
+
+        "$DROIDHUNTER_PYTHON" \
+                "$DROIDHUNTER_SCRIPT" \
+                --interactive
+
+        DROIDHUNTER_STATUS=$?
+
+        echo
+
+        if [[ "$DROIDHUNTER_STATUS" -ne 0 ]]
+        then
+                echo -e ""$RS"DroidHunter exited with status $DROIDHUNTER_STATUS."$CE""
+        fi
+
+        echo
+        read -n1 -s -r -p "Press any key to return..."
+}
+
+# =================== END DROIDHUNTER ===================
+
 function remote_access
 {
 	while true 
@@ -6179,6 +6460,7 @@ function remote_access
 	if [[ -d /root/Enigma ]]
 	then
 		echo -e ""$YS"31"$CE") Enigma                Multiplatform payload dropper"
+		echo -e ""$YS"32"$CE") DroidHunter           Android security assessment and APK analysis"
 	else
 		echo -e ""$RS"31"$CE") "$RS"Enigma"$CE"                 Multiplatform payload dropper"
 	fi
@@ -7250,6 +7532,9 @@ function remote_access
 				continue
 			fi
 		fi
+	elif [[ "$KEYLOG" = "32" ]]
+	then
+		run_droidhunter
 	elif [[ "$KEYLOG" = "00" ]]
 	then
 		clear
@@ -7266,6 +7551,256 @@ function remote_access
 	$READAK
 	done
 }
+# ===================== CB-EMAILHUNTER =====================
+
+# ===================== CB-EMAILHUNTER =====================
+
+function install_cb_emailhunter
+{
+        clear
+        echo
+        echo -e ""$BS"Installing CB-EmailHunter..."$CE""
+        echo
+
+        CB_EMAILHUNTER_DIR="/opt/cb-emailhunter"
+        CB_EMAILHUNTER_REPO="https://github.com/ciberbrigada/cb-emailhunter.git"
+
+        CB_MISSING_PACKAGES=()
+
+        command -v git >/dev/null 2>&1 || \
+                CB_MISSING_PACKAGES+=("git")
+
+        command -v python3 >/dev/null 2>&1 || \
+                CB_MISSING_PACKAGES+=("python3")
+
+        dpkg -s python3-venv >/dev/null 2>&1 || \
+                CB_MISSING_PACKAGES+=("python3-venv")
+
+        dpkg -s python3-pip >/dev/null 2>&1 || \
+                CB_MISSING_PACKAGES+=("python3-pip")
+
+        if [[ "${#CB_MISSING_PACKAGES[@]}" -gt 0 ]]
+        then
+                echo -e ""$YS"Installing required packages..."$CE""
+                echo
+
+                apt-get update || \
+                        echo -e ""$YS"Warning: apt update failed; trying cached package indexes."$CE""
+
+                if ! DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                        "${CB_MISSING_PACKAGES[@]}"
+                then
+                        echo
+                        echo -e ""$RS"Failed to install system requirements."$CE""
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+        fi
+
+        echo
+        echo -e ""$YS"Downloading/updating CB-EmailHunter..."$CE""
+
+        if [[ -d "$CB_EMAILHUNTER_DIR/.git" ]]
+        then
+                if ! git -C "$CB_EMAILHUNTER_DIR" pull --ff-only
+                then
+                        echo
+                        echo -e ""$RS"Could not update CB-EmailHunter."$CE""
+                        echo "The existing installation was not removed."
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+
+        elif [[ -e "$CB_EMAILHUNTER_DIR" ]]
+        then
+                CB_OLD_DIR="${CB_EMAILHUNTER_DIR}.backup-$(date +%Y%m%d-%H%M%S)"
+                mv "$CB_EMAILHUNTER_DIR" "$CB_OLD_DIR"
+
+                echo "Existing directory backed up to:"
+                echo "$CB_OLD_DIR"
+
+                if ! git clone "$CB_EMAILHUNTER_REPO" "$CB_EMAILHUNTER_DIR"
+                then
+                        echo
+                        echo -e ""$RS"Failed to clone CB-EmailHunter."$CE""
+
+                        if [[ ! -e "$CB_EMAILHUNTER_DIR" ]]
+                        then
+                                mv "$CB_OLD_DIR" "$CB_EMAILHUNTER_DIR"
+                        fi
+
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+
+        else
+                if ! git clone "$CB_EMAILHUNTER_REPO" "$CB_EMAILHUNTER_DIR"
+                then
+                        echo
+                        echo -e ""$RS"Failed to clone CB-EmailHunter."$CE""
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+        fi
+
+        if [[ ! -f "$CB_EMAILHUNTER_DIR/cb_email_hunter.py" ]]
+        then
+                echo
+                echo -e ""$RS"cb_email_hunter.py was not found."$CE""
+                read -n1 -s -r -p "Press any key to continue..."
+                return 1
+        fi
+
+        if [[ ! -f "$CB_EMAILHUNTER_DIR/requirements.txt" ]]
+        then
+                echo
+                echo -e ""$RS"requirements.txt was not found."$CE""
+                read -n1 -s -r -p "Press any key to continue..."
+                return 1
+        fi
+
+        echo
+        echo -e ""$YS"Creating Python virtual environment..."$CE""
+
+        if [[ ! -x "$CB_EMAILHUNTER_DIR/venv/bin/python" ]]
+        then
+                rm -rf "$CB_EMAILHUNTER_DIR/venv"
+
+                if ! python3 -m venv "$CB_EMAILHUNTER_DIR/venv"
+                then
+                        echo
+                        echo -e ""$RS"Failed to create the Python environment."$CE""
+                        read -n1 -s -r -p "Press any key to continue..."
+                        return 1
+                fi
+        fi
+
+        echo
+        echo -e ""$YS"Installing Python dependencies..."$CE""
+
+        if ! "$CB_EMAILHUNTER_DIR/venv/bin/python" -m pip install \
+                --upgrade pip setuptools wheel
+        then
+                echo
+                echo -e ""$RS"Failed to update Python packaging tools."$CE""
+                read -n1 -s -r -p "Press any key to continue..."
+                return 1
+        fi
+
+        if ! "$CB_EMAILHUNTER_DIR/venv/bin/python" -m pip install \
+                -r "$CB_EMAILHUNTER_DIR/requirements.txt"
+        then
+                echo
+                echo -e ""$RS"Failed to install CB-EmailHunter dependencies."$CE""
+                read -n1 -s -r -p "Press any key to continue..."
+                return 1
+        fi
+
+        echo
+        echo -e ""$YS"Creating CB-EmailHunter command..."$CE""
+
+        cat > /usr/bin/cb-emailhunter <<'CB_EMAILHUNTER_LAUNCHER'
+#!/bin/bash
+
+INSTALL_DIR="/opt/cb-emailhunter"
+PYTHON="$INSTALL_DIR/venv/bin/python"
+SCRIPT="$INSTALL_DIR/cb_email_hunter.py"
+
+if [[ ! -x "$PYTHON" ]]
+then
+        echo "CB-EmailHunter Python environment was not found."
+        exit 1
+fi
+
+if [[ ! -f "$SCRIPT" ]]
+then
+        echo "CB-EmailHunter script was not found."
+        exit 1
+fi
+
+cd "$INSTALL_DIR" || exit 1
+exec "$PYTHON" "$SCRIPT" "$@"
+CB_EMAILHUNTER_LAUNCHER
+
+        chmod 755 /usr/bin/cb-emailhunter
+        ln -sf /usr/bin/cb-emailhunter /usr/local/bin/cb-emailhunter
+        hash -r
+
+        echo
+        echo -e ""$GS"CB-EmailHunter installed successfully."$CE""
+        echo
+        echo "Installation: $CB_EMAILHUNTER_DIR"
+        echo "Command: /usr/bin/cb-emailhunter"
+        echo
+
+        read -n1 -s -r -p "Press any key to continue..."
+        return 0
+}
+
+
+function run_cb_emailhunter
+{
+        CB_EMAILHUNTER_DIR="/opt/cb-emailhunter"
+        CB_EMAILHUNTER_PYTHON="$CB_EMAILHUNTER_DIR/venv/bin/python"
+        CB_EMAILHUNTER_SCRIPT="$CB_EMAILHUNTER_DIR/cb_email_hunter.py"
+
+        if [[ ! -x "$CB_EMAILHUNTER_PYTHON" || \
+              ! -f "$CB_EMAILHUNTER_SCRIPT" ]]
+        then
+                clear
+                echo
+                echo -e ""$YS"CB-EmailHunter is not installed."$CE""
+                echo
+
+                read -r -p "Install CB-EmailHunter now? [Y/n]: " \
+                        CB_INSTALL_CHOICE
+
+                case "$CB_INSTALL_CHOICE" in
+                        ""|y|Y|yes|YES|Yes)
+                                install_cb_emailhunter
+                                ;;
+
+                        *)
+                                return
+                                ;;
+                esac
+        fi
+
+        if [[ ! -x "$CB_EMAILHUNTER_PYTHON" || \
+              ! -f "$CB_EMAILHUNTER_SCRIPT" ]]
+        then
+                echo
+                echo -e ""$RS"CB-EmailHunter installation was not completed."$CE""
+                echo
+                read -n1 -s -r -p "Press any key to continue..."
+                return
+        fi
+
+        clear
+        echo
+        echo -e ""$BS"Starting CB-EmailHunter..."$CE""
+        echo
+
+        cd "$CB_EMAILHUNTER_DIR" || return
+
+        "$CB_EMAILHUNTER_PYTHON" \
+                "$CB_EMAILHUNTER_SCRIPT"
+
+        CB_EMAILHUNTER_STATUS=$?
+
+        echo
+
+        if [[ "$CB_EMAILHUNTER_STATUS" -ne 0 ]]
+        then
+                echo -e ""$RS"CB-EmailHunter exited with status $CB_EMAILHUNTER_STATUS."$CE""
+        fi
+
+        echo
+        read -n1 -s -r -p "Press any key to return..."
+}
+
+# =================== END CB-EMAILHUNTER ===================
+
 function information_gathering
 {
 	while true 
@@ -7333,9 +7868,17 @@ function information_gathering
    if command -v phoneintel >/dev/null 2>&1
    then
            printf "%b%2s%b) %-20s%s\n" "$YS" "12" "$CE" "PhoneIntel" "Analyze phone numbers using public OSINT data"
+           printf "%b%2s%b) %-20s%s\n" "$YS" "13" "$CE" "Aliens_eye" "AI-powered username OSINT scanner"
    else
            printf "%b%2s%b) %b%-20s%b%s\n" "$RS" "12" "$CE" "$RS" "PhoneIntel" "$CE" "Analyze phone numbers using public OSINT data"
+           printf "%b%2s%b) %b%-20s%b%s\n" "$RS" "13" "$CE" "$RS" "Aliens_eye" "$CE" "AI-powered username OSINT scanner"
    fi
+		if [[ -x "/usr/bin/cb-emailhunter" || -x "/usr/local/bin/cb-emailhunter" || ( -x "/opt/cb-emailhunter/venv/bin/python" && -f "/opt/cb-emailhunter/cb_email_hunter.py" ) ]]
+		then
+			printf "%b%2s%b) %-20s%s\n" "$YS" "14" "$CE" "CB-EmailHunter" "Email OSINT and breach intelligence"
+		else
+			printf "%b%2s%b) %b%-20s%b%s\n" "$RS" "14" "$CE" "$RS" "CB-EmailHunter" "$CE" "Email OSINT and breach intelligence"
+		fi
 		echo -e ""$YS" b"$CE") Go back"
 		echo -e ""$YS"00"$CE") Main menu"
 		echo -e "Choose: "
@@ -7527,6 +8070,34 @@ function information_gathering
                         echo
                         continue
                 fi
+
+                if [[ "$INFOG" = 13 ]]
+                then
+                        clear
+                        echo -e "\033[1;36mAliens_eye\033[0m"
+                        echo -e "\033[1;33mAI-powered username OSINT scanner.\033[0m"
+                        echo
+
+                        if [[ ! -d /opt/Aliens_eye ]]
+                        then
+                                echo -e "\033[1;31m[!] Aliens_eye is not installed.\033[0m"
+                                echo
+                                echo "Press any key to continue"
+                                read -r -n 1 -s
+                                echo
+                                continue
+                        fi
+
+                        cd /opt/Aliens_eye || continue
+                        python3 aliens_eye.py
+
+                        echo
+                        echo "Press any key to continue"
+                        read -r -n 1 -s
+                        echo
+                        continue
+                fi
+
 
 
 		if [[ "$INFOG" = 1 ]]
@@ -7805,6 +8376,9 @@ function information_gathering
 		elif [[ "$INFOG" = 0 ]]
 		then
 			exit
+		elif [[ "$INFOG" = "14" ]]
+		then
+			run_cb_emailhunter
 		elif [[ "$INFOG" = 00 ]]
 		then
 			exec bash $0
@@ -8677,6 +9251,105 @@ function interface_menu
 		set_interface_number
 	fi
 }
+
+
+# ===================== AI SECURITY =====================
+
+# ===================== AI SECURITY =====================
+
+# ===================== AI SECURITY =====================
+
+function ai_security
+{
+        while true
+        do
+                clear
+                echo
+                echo -e ""$BS"---------------- AI SECURITY ----------------"$CE""
+                echo
+                echo -e "  "$YS"1"$CE") MouPentester - AI-powered penetration testing assistant"
+                echo
+                echo -e "  "$YS"b"$CE") Go back"
+                echo -e "  "$YS"0"$CE") Exit"
+                echo
+                echo -n "  Choose: "
+
+                read -r AI_CHOICE
+
+                case "$AI_CHOICE" in
+                        1)
+                                MOUPENTESTER_COMMAND=""
+
+                                if command -v moupentester >/dev/null 2>&1
+                                then
+                                        MOUPENTESTER_COMMAND="$(command -v moupentester)"
+                                elif [[ -x "/usr/local/bin/moupentester" ]]
+                                then
+                                        MOUPENTESTER_COMMAND="/usr/local/bin/moupentester"
+                                elif [[ -x "/usr/bin/moupentester" ]]
+                                then
+                                        MOUPENTESTER_COMMAND="/usr/bin/moupentester"
+                                elif [[ -x "/bin/moupentester" ]]
+                                then
+                                        MOUPENTESTER_COMMAND="/bin/moupentester"
+                                elif [[ -x "/root/.local/bin/moupentester" ]]
+                                then
+                                        MOUPENTESTER_COMMAND="/root/.local/bin/moupentester"
+                                elif [[ -x "/home/moupi/.local/bin/moupentester" ]]
+                                then
+                                        MOUPENTESTER_COMMAND="/home/moupi/.local/bin/moupentester"
+                                fi
+
+                                if [[ -z "$MOUPENTESTER_COMMAND" ]]
+                                then
+                                        echo
+                                        echo -e ""$RS"MouPentester command was not found."$CE""
+                                        echo
+                                        echo "Expected command name: moupentester"
+                                        echo
+                                        read -n1 -s -r -p "Press any key to continue..."
+                                        continue
+                                fi
+
+                                clear
+                                echo -e ""$BS"Starting MouPentester..."$CE""
+                                echo
+
+                                "$MOUPENTESTER_COMMAND"
+
+                                MOUPENTESTER_STATUS=$?
+
+                                echo
+                                if [[ "$MOUPENTESTER_STATUS" -ne 0 ]]
+                                then
+                                        echo -e ""$RS"MouPentester exited with status $MOUPENTESTER_STATUS."$CE""
+                                fi
+
+                                echo
+                                read -n1 -s -r -p "Press any key to return..."
+                                ;;
+
+                        b|B|back|BACK)
+                                clear
+                                return
+                                ;;
+
+                        0)
+                                exit
+                                ;;
+
+                        00)
+                                exec bash "$0"
+                                ;;
+
+                        *)
+                                ;;
+                esac
+        done
+}
+
+# =================== END AI SECURITY ===================
+
 function tools_menu
 {
 	while true
@@ -8689,9 +9362,10 @@ function tools_menu
 	echo -e ""$YS" 2"$CE") Remote access"
 	echo -e ""$YS" 3"$CE") Information gathering"
 	echo -e ""$YS" 4"$CE") Webside tools"
-	echo -e ""$YS" 5"$CE") Others"
-	echo -e ""$YS" 6"$CE") Install/reinstall a tool"
-	echo -e ""$YS" i"$CE") Info"
+	echo -e ""$YS" 5"$CE") Other tools"
+	echo -e ""$YS" 6"$CE") AI Security"
+	echo -e ""$YS" 7"$CE") Install/reinstall a tool"
+        	echo -e ""$YS" i"$CE") Info"
 	echo -e ""$YS" b"$CE") Go back"
 	#~ echo -e ""$YS"00"$CE") Main menu"
 	echo -e ""$YS" 0"$CE") EXIT"
@@ -8714,6 +9388,9 @@ function tools_menu
 		then
 			other_tools
 		elif [[ "$CATEG" = "6" ]]
+		then
+			ai_security
+		elif [[ "$CATEG" = "7" ]]
 		then
 			NOCONFIRM=0
 			reinstall_tools
